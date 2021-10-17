@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display a map with a custom style</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+#zoom{
+	position:fixed;top:0px;right:0px;
+	z-index:999;
+	padding:10px;
+}
+#center{
+	position:fixed;top:15px;right:0px;
+	z-index:999;
+	padding:10px;
+}
+#colors{
+	position:fixed;top:40px;right:0px;
+	z-index:999;
+	padding:10px;
+	background-color:rgba(255,255,255,.5);
+}
+</style>
+</head>
+<body>
+	<div id="zoom">zoom</div>
+	<div id="center">center</div>
+	<div id="colors">colors</div>
+<div id="map">
+	
+</div>
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoiampqaWlhMTIzIiwiYSI6ImNpbDQ0Z2s1OTN1N3R1eWtzNTVrd29lMDIifQ.gSWjNbBSpIFzDXU2X5YCiQ';
+	const map = new mapboxgl.Map({
+	container: 'map', // container ID
+	style: 'mapbox://styles/jjjiia123/ckuoxbxs46sgg17phna2nhj4b', // custom style url from https://studio.mapbox.com/
+	center: [ -73.86096055473216, 40.75430783952925], // starting position
+	zoom: 10.5, // starting zoom
+	maxZoom:12,
+	minZoom:4//,
+	//icon-allow-overlap:true
+	});
+	var colors = ["#ce4dc3",
+"#6edf53",
+"#7642d0",
+"#dccd37",
+"#3f7ee8",
+"#c0e542",
+"#75b83b",
+"#569d3f",
+"#6b7acf",
+"#72dca1",
+"#d84d34",
+"#df7432",
+"#427632",
+"#d2486e",
+"#c88534",
+"#2f3a70",
+"#31679f",
+"#e13d1b",
+"#76a4cb",
+"#75c3bb",
+"#de3797",
+"#659ff1",
+"#659ff1"]
+	
+	
+			var nationColors = {"ACS19_5yr_B02018002":colors[0],
+							"ACS19_5yr_B02018003":colors[1],
+							"ACS19_5yr_B02018004":colors[2],
+							"ACS19_5yr_B02018005":colors[3],
+							"ACS19_5yr_B02018006":colors[4],
+							"ACS19_5yr_B02018007":colors[5],
+							"ACS19_5yr_B02018008":colors[6],
+							"ACS19_5yr_B02018009":colors[7],
+							"ACS19_5yr_B02018010":colors[8],
+							"ACS19_5yr_B02018011":colors[9],
+							"ACS19_5yr_B02018012":colors[10],
+							"ACS19_5yr_B02018013":colors[11],
+							"ACS19_5yr_B02018014":colors[12],
+							"ACS19_5yr_B02018015":colors[13],
+							"ACS19_5yr_B02018016":colors[14],
+							"ACS19_5yr_B02018017":colors[15],
+							"ACS19_5yr_B02018018":colors[16],
+							"ACS19_5yr_B02018019":colors[17],
+							"ACS19_5yr_B02018020":colors[18],
+							"ACS19_5yr_B02018021":colors[19],
+							"ACS19_5yr_B02018022":colors[20],
+							"ACS19_5yr_B02018023":colors[21],
+							"ACS19_5yr_B02018024":colors[22]}
+	
+	
+	var nationLabels ={"B02018002":"Asian Indian",
+           "B02018003":"Bangladeshi",
+           "B02018004":"Bhutanese",
+           "B02018005":"Burmese",
+           "B02018006":"Cambodian",
+           "B02018007":"Chinese, Except Taiwanese",
+           "B02018008":"Filipino",
+           "B02018009":"Hmong",
+           "B02018010":"Indonesian",
+           "B02018011":"Japanese",
+           "B02018012":"Korean",
+           "B02018013":"Laotian",
+           "B02018014":"Malaysian",
+           "B02018015":"Mongolian",
+           "B02018016":"Nepalese",
+           "B02018017":"Okinawan",
+           "B02018018":"Pakistani",
+           "B02018019":"Sri Lankan",
+           "B02018020":"Taiwanese",
+           "B02018021":"Thai",
+           "B02018022":"Vietnamese",
+           "B02018023":"Other Asian, Specified",
+           "B02018024":"Other Asian, Not Specified"}
+	
+	
+		   for(var n in nationLabels){
+			   d3.select("#colors").append("div").html(nationLabels[n]).style("color",nationColors["ACS19_5yr_"+n])
+		   	console.log(nationLabels[n])
+		   }
+	console.log(colors.length)
+ 	map.on("load",function(){
+	console.log(map.getStyle().layers)
+		map.on("move",function(){
+			d3.select("#zoom").html("zoom: "+map.getZoom())
+			d3.select("#center").html("center: "+map.getCenter().lng+", "+map.getCenter().lat)
+		})
+ 		// console.log("test")
+		 //map.setLayoutProperty("points-nationality-9",'icon-allow-overlap', false)//: 
+		
+ 		 var layers =  map.getStyle().layers
+ 		  	 for(var l =0;l<10;l++){
+ 		   			var layerId = "points-nationality-"+l
+				 if(layerId!="mapbox-satellite"&& layerId!="background"&& layerId!="country-boundaries"){
+				 //	console.log(layerId)
+					 map.setPaintProperty(layerId,'circle-radius',{'base': 1,'stops': [[4,1],[5, 1],[8,.8],[11,.8],[12, .6]]})
+					 map.setPaintProperty(layerId,'circle-opacity',{'base': .5,'stops': [[4, .5],[8, 1],[12, 1]]})
+					  map.setPaintProperty(layerId, "circle-color", ['match',
+							['get', 'nation'],
+							"ACS19_5yr_B02018002",colors[0],
+							"ACS19_5yr_B02018003",colors[1],
+							"ACS19_5yr_B02018004",colors[2],
+							"ACS19_5yr_B02018005",colors[3],
+							"ACS19_5yr_B02018006",colors[4],
+							"ACS19_5yr_B02018007",colors[5],
+							"ACS19_5yr_B02018008",colors[6],
+							"ACS19_5yr_B02018009",colors[7],
+							"ACS19_5yr_B02018010",colors[8],
+							"ACS19_5yr_B02018011",colors[9],
+							"ACS19_5yr_B02018012",colors[10],
+							"ACS19_5yr_B02018013",colors[11],
+							"ACS19_5yr_B02018014",colors[12],
+							"ACS19_5yr_B02018015",colors[13],
+							"ACS19_5yr_B02018016",colors[14],
+							"ACS19_5yr_B02018017",colors[15],
+							"ACS19_5yr_B02018018",colors[16],
+							"ACS19_5yr_B02018019",colors[17],
+							"ACS19_5yr_B02018020",colors[18],
+							"ACS19_5yr_B02018021",colors[19],
+							"ACS19_5yr_B02018022",colors[20],
+							"ACS19_5yr_B02018023",colors[21],
+							"ACS19_5yr_B02018024",colors[22],
+							/* other */ '#ccc']
+ 
+  					 )
+					
+					// map.setLayoutProperty(layerId, 'icon-ignore-placement', 1);
+					
+					// map.setLayoutProperty(layerId,'icon-allow-overlap', false)//: 
+				 }
+				 
+ 		   		}
+
+ 	})
+	
+
+	 // map.setPaintProperty(, "circle-color", color)
+	
+	
+</script>
+ 
+</body>
+</html>

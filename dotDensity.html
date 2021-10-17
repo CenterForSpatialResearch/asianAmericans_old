@@ -1,0 +1,159 @@
+<html>
+<head>
+	<title>Dot density map</title>
+	<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="https://d3js.org/topojson.v1.min.js"></script>
+</head>
+<body>
+
+<script>
+
+	var width = window.innerWidth*2,
+	height = window.innerHeight*2;
+
+// invisible map of polygons
+var polyCanvas = d3.select("body")
+	.append("canvas")
+	.attr("width",width)
+	.attr("height",height)
+	.style("display","none");
+
+// using this div to crop the map; it has messy edges
+var container = d3.select("body")
+	.append("div")
+	.style({
+		"position": "relative",
+		"width": (width-20) + "px",
+		"height": (height-20) + "px",
+		"overflow": "hidden"
+	});
+
+// canvas for dot map
+var dotCanvas = container.append("canvas")
+	.attr("width",width)
+	.attr("height",height)
+	.style({
+		"position": "absolute",
+		"top": "-100px",
+		"left": "-100px"
+	});
+
+var projection = d3.geo.albers()
+	.rotate([71.083,0])
+	.center([0,42.3581])
+	.parallels([40,44])
+	.scale(4000000)
+	.translate([width / 2, height / 2]);
+
+var path = d3.geo.path().projection(projection);
+
+var polyContext = polyCanvas.node().getContext("2d"),
+	dotContext = dotCanvas.node().getContext("2d");
+
+var features;
+
+
+d3.select(dotContext.canvas).call(d3.behavior.zoom()
+    .scaleExtent([1, 8])
+    .on("zoom", ({transform}) => zoomed(transform)));
+
+function zoomed(transform) {
+  context.save();
+  context.clearRect(0, 0, width, height);
+  context.translate(transform.x, transform.y);
+  context.scale(transform.k, transform.k);
+  context.beginPath();
+  for (const [x, y] of data) {
+    context.moveTo(x + r, y);
+    context.arc(x, y, r, 0, 2 * Math.PI);
+  }
+  context.fill();
+  context.restore();
+}
+
+d3.json( "blocks.json", function(error, blocks){
+	features = topojson.feature(blocks, blocks.objects.massblocks_central).features;
+
+	// draw the polygons with a unique color for each
+	var i=features.length;
+	while(i--){
+		var r = parseInt(i / 256),
+			g = i % 256;
+		drawPolygon( features[i], polyContext, "rgb(" + r + "," + g + ",0)" );
+	};
+
+	// pixel data for the whole polygon map. we'll use color for point-in-polygon tests.
+	var imageData = polyContext.getImageData(0,0,width,height);
+
+	// now draw dots
+	i=features.length;
+	var totalPopulation = 0
+	while(i--){
+
+		var pop = features[i].properties.POP10*50// / 2;	// one dot = 2 people
+		totalPopulation+=pop
+		if ( !pop ) continue;
+
+		var bounds = path.bounds(features[i]),
+			x0 = bounds[0][0],
+			y0 = bounds[0][1],
+			w = bounds[1][0] - x0,
+			h = bounds[1][1] - y0,
+			hits = 0,
+			count = 0,
+			limit = pop*10,	// limit tests just in case of infinite loops
+			x,
+			y,
+			r = parseInt(i / 256),
+			g = i % 256;
+
+		// test random points within feature bounding box
+		while( hits < pop-1 && count < limit ){	// we're done when we either have enough dots or have tried too many times
+			x = parseInt(x0 + Math.random()*w);
+			y = parseInt(y0 + Math.random()*h);
+
+			// use pixel color to determine if point is within polygon. draw the dot if so.
+			if ( testPixelColor(imageData,x,y,width,r,g) ){
+				drawPixel(x,y,0,153,204,255);	// #09c, vintage @indiemaps
+				hits++;
+			}
+			count ++;
+		}
+	}
+	
+	console.log(totalPopulation)
+});
+
+function testPixelColor(imageData,x,y,w,r,g){
+	var index = (x + y * w) * 4;
+	return imageData.data[index + 0] == r && imageData.data[index + 1] == g;
+}
+
+function drawPolygon( feature, context, fill ){
+	var coordinates = feature.geometry.coordinates;
+	context.fillStyle = fill || "#000";
+	context.beginPath();
+	coordinates.forEach( function(ring){
+		ring.forEach( function(coord, i){
+			var projected = projection( coord );
+			if (i == 0) {
+                context.moveTo(projected[0], projected[1]);
+            } else {
+                context.lineTo(projected[0], projected[1]);
+            }
+		});
+	});
+	context.closePath();
+	context.fill();
+}
+
+// there are faster (or prettier) ways to draw lots of dots, but this works
+function drawPixel (x, y, r, g, b, a) {
+	dotContext.fillStyle = "rgba("+r+","+g+","+b+","+(a/255)+")";
+	dotContext.fillRect( x, y, 1, 1 );
+}
+
+</script>
+
+</body>
+</html>
