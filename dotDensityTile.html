@@ -121,10 +121,38 @@ body { margin: 0; padding: 0; }
            "B02018024":"Other Asian, Not Specified"}
 	
 	
-		   for(var n in nationLabels){
-			   d3.select("#colors").append("div").html(nationLabels[n]).style("color",nationColors["ACS19_5yr_"+n])
-		   	console.log(nationLabels[n])
+var promise = d3.csv("R12930229_SL010.csv")
+		   Promise.all([promise])
+		   .then(function(data){
+			   	drawKey(data[0][0])
+		   })
+		   
+		   function drawKey(data){
+		   	console.log(data)
+			var percentDictionary = []
+			   for(var n in nationLabels){
+				   var percent = data["PCT_ACS19_5yr_"+n]
+				   var value = data["ACS19_5yr_"+n]
+				   percentDictionary.push({nation:n,percent:percent,pop:value})
+//			   	console.log(nationLabels[n])
+			   }
+			   
+			var sorted = percentDictionary.sort(function(a,b){return b.percent-a.percent})
+			console.log(sorted)
+			   for(var s in sorted){
+				   console.log(s)
+				   d3.select("#colors").append("div")
+				   .html(nationLabels[sorted[s].nation]
+					   +" "+sorted[s].percent+"%")
+				.style("color",nationColors["ACS19_5yr_"+sorted[s].nation])
+				.attr("id",sorted[s].nation)
+				.on("mouseover",function(){
+					var nation = d3.select(this).attr("id")
+					
+				})
+			   }
 		   }
+		   
 	console.log(colors.length)
  	map.on("load",function(){
 	console.log(map.getStyle().layers)
