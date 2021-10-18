@@ -186,11 +186,11 @@ function drawMap(data){
 				var geoId = features.properties.FIPS
 				//console.log(tractDictionary[geoId])
 			
-				  map.setPaintProperty("tracts-11r8l4", "line-color", 
+				  map.setPaintProperty("tracts-11r8l4", "line-opacity", 
  			   		['match',
 							['get', 'FIPS'],
-							 geoId,"#000000",
-				"#aaaaaa"]
+							 geoId,1,
+			0]
 				)
 			
 			
