@@ -229,7 +229,7 @@ function drawMap(data){
 	center: [ -73.86096055473216, 40.75430783952925], // starting position
 	zoom: 10.5, // starting zoom
 	maxZoom:11.5,
-	minZoom:4//,
+	minZoom:7//,
 	//icon-allow-overlap:true
 	});
 	 map.addControl(
@@ -242,6 +242,7 @@ function drawMap(data){
 	 );
 	
  	map.on("load",function(){
+			map.setPaintProperty("tracts-11r8l4", "line-opacity",0)
 		
     	drawKey(data[0][0],data[1])
 		
