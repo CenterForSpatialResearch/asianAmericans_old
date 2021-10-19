@@ -2,11 +2,13 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Display a map with a custom style</title>
+<title>Asian American Dot Density</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
 <script src="//d3js.org/d3.v5.min.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
 <style>
 body { margin: 0; padding: 0; 
 	font-family:helvetica;
@@ -23,20 +25,24 @@ body { margin: 0; padding: 0;
 	padding:10px;
 }
 #colors{
-	position:fixed;top:5px;right:5px;
+	position:fixed;top:70px;left:5px;
 	z-index:999;
 	padding:10px;
-	background-color:rgba(255,255,255,.8);
+	background-color:rgba(255,255,255,.9);
 	font-size:11px;
-	border:1px solid black;
+/*	border:1px solid black;
+*/	width:265px;
+    box-shadow:5px 5px 10px rgba(0,0,0,.3);  
 }
 #popup{
-	position:fixed;top:-40px;left:-100px;
+	position:fixed;bottom:5px;left:5px;
 	z-index:999;
 	padding:10px;
-	background-color:rgba(255,255,255,.8);
-	border:1px solid black;
-	font-size:11px;
+	background-color:rgba(255,255,255,1);
+	/*border:1px solid black;
+*/font-size:11px;
+    box-shadow:5px 5px 10px rgba(0,0,0,.3);  
+	
 }
 #title{
 	font-size:16px;
@@ -58,6 +64,8 @@ body { margin: 0; padding: 0;
 	padding:10px;
 	border:1px solid black;
 	background-color:rgba(255,255,255,1);
+	background-color:black;
+	color:white;
 }
 td{
 	line-height:100%;
@@ -74,11 +82,11 @@ th{
 		<div id="title">Asian American Dot Density Map</div>
 		<div id="subtitle">Based on 2015 - 2019 5 year ACS estimates</div>
 	</div>
-	<div id="menu">
+	<!-- <div id="menu">
 		Diversity
 		Concentration
 		Absence
-	</div>
+	</div> -->
 	
 <!--	<div id="zoom">zoom</div>
 	<div id="center">center</div> -->
@@ -87,7 +95,7 @@ th{
 	
 </div>
 
-<div id="popup">tract info</div>
+<!-- <div id="popup">tract info</div> -->
 <script>
 
 var colors = ["#ce4dc3","#6edf53","#7642d0","#dccd37","#3f7ee8","#c0e542","#75b83b","#569d3f","#6b7acf","#72dca1","#d84d34","#df7432","#427632","#d2486e","#c88534","#2f3a70","#31679f","#e13d1b","#76a4cb","#75c3bb","#de3797","#659ff1","#659ff1"]
@@ -139,8 +147,8 @@ var colorDictionary={"Asian Indian":"#1cabfc",
 "Taiwanese":"#ff018f",
 "Thai":"#ff12eb",
 "Vietnamese":"#ff01cc",
-"Other Asian, Specified":"#555555",
-"Other Asian, Not Specified":"#555555"}
+"Other Asian, Specified":"#888888",
+"Other Asian, Not Specified":"#888888"}
 	
 var nationLabels ={"B02018002":"Asian Indian",
        "B02018003":"Bangladeshi",
@@ -198,6 +206,7 @@ function sumOfTracts(tracts,tractsData){
 	}
 	onScreen["all"]=0
 	for(var t in tracts){
+		print(tracts[t])
 		var gid = tracts[t].properties.FIPS
 		var tract = tractsData[gid]
 		onScreen["all"]+=parseInt(tract["ACS19_5yr_B02018001"])
@@ -223,6 +232,14 @@ function drawMap(data){
 	minZoom:4//,
 	//icon-allow-overlap:true
 	});
+	 map.addControl(
+		 new MapboxGeocoder({
+			 accessToken: mapboxgl.accessToken,
+			 mapboxgl: mapboxgl,
+			  zoom: 11.5
+			 
+		 })
+	 );
 	
  	map.on("load",function(){
 		
@@ -232,14 +249,11 @@ function drawMap(data){
 			var features = map.queryRenderedFeatures(e.point,{layers: ["tracts-11r8l4"]})[0];
 			if(features!=null){
 				var geoId = features.properties.FIPS
+				d3.select("#onScreen_header").html("% of Asian <br>Population in <br>tract "+geoId)
 				//console.log(tractDictionary[geoId])
 			
-				  map.setPaintProperty("tracts-11r8l4", "line-opacity", 
- 			   		['match',
-							['get', 'FIPS'],
-							 geoId,1,
-			0]
-				)
+			map.setPaintProperty("tracts-11r8l4", "line-opacity",['match',['get', 'FIPS'],geoId,1,0])
+			//map.setPaintProperty("tracts-11r8l4", "line-width",['match',['get', 'FIPS'],geoId,2,0])
 			
 			
 				var totalAsians =tractDictionary[geoId]["ACS19_5yr_B02018001"]
@@ -251,50 +265,54 @@ function drawMap(data){
 						var label = nationLabels[n]
 						var value = tractDictionary[geoId]["ACS19_5yr_"+n]
 						var percent = Math.round(value/totalAsians*10000)/100+"%"
-						if(value!=0){
-							nations+="<strong>"+label+"</strong>: "+value+"("+percent+")"+"<br>"
+						// d3.select("#onScreen_"+n).html(percent)
+						if(percent!="0%"){
+							d3.select("#onScreen_"+n).html(percent)
+							//nations+="<strong>"+label+"</strong>: "+value+"("+percent+")"+"<br>"
+						}else{
+							d3.select("#onScreen_"+n).html("--")
 						}
-					}
-					var mouseX = e.point.x
-					var mouseY = e.point.y
-					d3.select("#popup").style("left",(mouseX+10)+"px")
-					d3.select("#popup").style("top",mouseY+"px")
+					}					//
+					// var mouseX = e.point.x
+					// var mouseY = e.point.y
+					// d3.select("#popup").style("left",(mouseX+10)+"px")
+					// d3.select("#popup").style("top",mouseY+"px")
 			
-					d3.select("#popup").html(function(d){
-					return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> "+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians+" ("+percentAsians+" of Total)<br><br>"+nations
-				
-					})
+					// d3.select("#popup").html(function(d){
+// 					return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> "+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians+" ("+percentAsians+" of Total)<br><br>"+nations
+//
+// 					})
 				}else{
-					d3.select("#popup").html(function(d){
-						return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> " 						+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians})
-					}
+					// d3.select("#popup").html(function(d){
+	// 					return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> " 						+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians})
+	 				}
 			}
 		})
 		
 	
-	 	map.on("move",function(){
-	 		d3.select("#zoom").html("zoom: "+map.getZoom())
-	 		d3.select("#center").html("center: "+map.getCenter().lng+", "+map.getCenter().lat)
-			
-			var zoom = map.getZoom()
-				//console.log(zoom)
-			
-			if(zoom<10.1){
-				d3.selectAll(".onScreen").style("visibility","hidden")
-			}else{
-				d3.selectAll(".onScreen").style("visibility","visible")
-	            var features = map.queryRenderedFeatures({
-	                layers: ['tracts-11r8l4']
-	            });
-				var onScreenTotals = sumOfTracts(features,tractDictionary)
-				//var onScreenTotalAsian = onScreenTotals[]
-				for(var os in onScreenTotals){
-					d3.select("#onScreen_"+os).html(parseInt(onScreenTotals[os]/onScreenTotals["all"]*10000)/100+"%")
-				}
-			}
-			
-			
-	 	})
+	 	// map.on("move",function(){
+// 	 		d3.select("#zoom").html("zoom: "+map.getZoom())
+// 	 		d3.select("#center").html("center: "+map.getCenter().lng+", "+map.getCenter().lat)
+//
+// 			var zoom = map.getZoom()
+// 				//console.log(zoom)
+//
+// 			if(zoom<10.1){
+// 				d3.selectAll(".onScreen").style("visibility","hidden")
+// 			}else{
+// 				d3.selectAll(".onScreen").style("visibility","visible")
+// 	            var features = map.queryRenderedFeatures({
+// 	                layers: ['tracts-11r8l4']
+// 	            });
+// 				var onScreenTotals = sumOfTracts(features,tractDictionary)
+// 				//var onScreenTotalAsian = onScreenTotals[]
+// 				for(var os in onScreenTotals){
+// 					d3.select("#onScreen_"+os).html(parseInt(onScreenTotals[os]/onScreenTotals["all"]*10000)/100+"%")
+// 				}
+// 			}
+//
+//
+// 	 	})
  		// console.log("test")
 		 //map.setLayoutProperty("points-nationality-9",'icon-allow-overlap', false)//: 
 		
@@ -351,8 +369,8 @@ function drawKey(data,tracts){
 		var table = d3.select("#colors").append("div").append("table")
 			var row = table.append("tr")
 		row.append("th").html("Group<br>Name<br>")
-		row.append("th").html("% Asian <br>Country")
-		row.append("th").html("% Asian <br>Population <br>on screen").attr("class","onScreen")
+		row.append("th").html("% of Asian Population<br>in Country")
+		row.append("th").html("% of Asian <br>Population <br>in highlighted tract").attr("class","onScreen").attr("id","onScreen_header")
 			
 		for(var s in sorted){
 			//console.log(sorted[s].nation)
