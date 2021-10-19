@@ -23,14 +23,15 @@ body { margin: 0; padding: 0;
 	padding:10px;
 }
 #colors{
-	position:fixed;top:40px;right:0px;
+	position:fixed;top:5px;right:5px;
 	z-index:999;
 	padding:10px;
 	background-color:rgba(255,255,255,.8);
 	font-size:11px;
+	border:1px solid black;
 }
 #popup{
-	position:fixed;top:40px;left:0px;
+	position:fixed;top:-40px;left:-100px;
 	z-index:999;
 	padding:10px;
 	background-color:rgba(255,255,255,.8);
@@ -38,20 +39,48 @@ body { margin: 0; padding: 0;
 	font-size:11px;
 }
 #title{
-	position:fixed;top:0px;left:0px;
-	padding:10px;
-	font-size:24px;
+	font-size:16px;
 	letter-spacing:1px;
 	z-index:999;
 	width:100%;
+}
+#subtitle{
+	font-size:11px;
+	letter-spacing:1px;
+	z-index:999;
+	width:100%;	
+	padding-top:10px;
+}
+#header{
+	position:fixed;top:0px;left:0px;
+	z-index:999;
+	margin:5px;
+	padding:10px;
+	border:1px solid black;
 	background-color:rgba(255,255,255,1);
-	
+}
+td{
+	line-height:100%;
+}
+th{
+	text-align:left;
+	font-weight:300;
+	padding-right:10px;
 }
 </style>
 </head>
 <body>
-	<div id="title">Asian American Dot Density Map</div>
-	<!-- <div id="zoom">zoom</div>
+	<div id="header">
+		<div id="title">Asian American Dot Density Map</div>
+		<div id="subtitle">Based on 2015 - 2019 5 year ACS estimates</div>
+	</div>
+	<div id="menu">
+		Diversity
+		Concentration
+		Absence
+	</div>
+	
+<!--	<div id="zoom">zoom</div>
 	<div id="center">center</div> -->
 	<div id="colors"></div>
 <div id="map">
@@ -110,8 +139,8 @@ var colorDictionary={"Asian Indian":"#1cabfc",
 "Taiwanese":"#ff018f",
 "Thai":"#ff12eb",
 "Vietnamese":"#ff01cc",
-"Other Asian, Specified":"#aaaaaa",
-"Other Asian, Not Specified":"#aaaaaa"}
+"Other Asian, Specified":"#555555",
+"Other Asian, Not Specified":"#555555"}
 	
 var nationLabels ={"B02018002":"Asian Indian",
        "B02018003":"Bangladeshi",
@@ -141,7 +170,9 @@ var nationLabels ={"B02018002":"Asian Indian",
 var country = d3.csv("R12930229_SL010.csv")
 var tractAsians = d3.csv("R12929173_SL140_reduced_nations.csv")
 var tractTotals = d3.csv("R12931419_SL140.csv")
-	
+
+var map
+	   
 Promise.all([country,tractAsians,tractTotals])
 .then(function(data){
     drawMap(data)
@@ -159,19 +190,36 @@ function makeTractDictionary(data){
 	}
 	return dict
 }
-
+function sumOfTracts(tracts,tractsData){
+	//console.log(tracts)
+	var onScreen = {}
+	for(var b in nationLabels){
+		onScreen[b]=0
+	}
+	onScreen["all"]=0
+	for(var t in tracts){
+		var gid = tracts[t].properties.FIPS
+		var tract = tractsData[gid]
+		onScreen["all"]+=parseInt(tract["ACS19_5yr_B02018001"])
+		for(var c in nationLabels){
+			onScreen[c]+=parseInt(tract["ACS19_5yr_"+c])
+		}
+	}
+	//console.log(onScreen)
+	return onScreen
+}
 function drawMap(data){
 	var tracts = data[1]
 	var tractDictionary = makeTractDictionary(tracts)
 	var tractTotalsDictionary = makeTractDictionary(data[2])
 	//console.log(tracts)
 	mapboxgl.accessToken = 'pk.eyJ1IjoiampqaWlhMTIzIiwiYSI6ImNpbDQ0Z2s1OTN1N3R1eWtzNTVrd29lMDIifQ.gSWjNbBSpIFzDXU2X5YCiQ';
-	const map = new mapboxgl.Map({
+	map = new mapboxgl.Map({
 	container: 'map', // container ID
 	style: 'mapbox://styles/jjjiia123/ckuoxbxs46sgg17phna2nhj4b', // custom style url from https://studio.mapbox.com/
 	center: [ -73.86096055473216, 40.75430783952925], // starting position
 	zoom: 10.5, // starting zoom
-	maxZoom:12,
+	maxZoom:11.5,
 	minZoom:4//,
 	//icon-allow-overlap:true
 	});
@@ -218,20 +266,35 @@ function drawMap(data){
 					})
 				}else{
 					d3.select("#popup").html(function(d){
-						return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> "+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians})
-				
+						return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> " 						+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians})
+					}
+			}
+		})
+		
+	
+	 	map.on("move",function(){
+	 		d3.select("#zoom").html("zoom: "+map.getZoom())
+	 		d3.select("#center").html("center: "+map.getCenter().lng+", "+map.getCenter().lat)
+			
+			var zoom = map.getZoom()
+				//console.log(zoom)
+			
+			if(zoom<10.1){
+				d3.selectAll(".onScreen").style("visibility","hidden")
+			}else{
+				d3.selectAll(".onScreen").style("visibility","visible")
+	            var features = map.queryRenderedFeatures({
+	                layers: ['tracts-11r8l4']
+	            });
+				var onScreenTotals = sumOfTracts(features,tractDictionary)
+				//var onScreenTotalAsian = onScreenTotals[]
+				for(var os in onScreenTotals){
+					d3.select("#onScreen_"+os).html(parseInt(onScreenTotals[os]/onScreenTotals["all"]*10000)/100+"%")
 				}
 			}
 			
 			
-			
-		})
-		
-	
-		// map.on("move",function(){
-	// 		d3.select("#zoom").html("zoom: "+map.getZoom())
-	// 		d3.select("#center").html("center: "+map.getCenter().lng+", "+map.getCenter().lat)
-	// 	})
+	 	})
  		// console.log("test")
 		 //map.setLayoutProperty("points-nationality-9",'icon-allow-overlap', false)//: 
 		
@@ -267,7 +330,7 @@ function drawMap(data){
 							"ACS19_5yr_B02018022",colorDictionary[nationLabels["B02018022"]],
 							"ACS19_5yr_B02018023",colorDictionary[nationLabels["B02018023"]],
 							"ACS19_5yr_B02018024",colorDictionary[nationLabels["B02018024"]],
-							/* other */ '#ccc']
+							/* other */ '#555555']
  
   					 )
 				 }
@@ -284,17 +347,21 @@ function drawKey(data,tracts){
 			percentDictionary.push({nation:n,percent:percent,pop:value})
 	}
 
-		var sorted = percentDictionary.sort(function(a,b){return b.percent-a.percent})
+		var sorted = percentDictionary//.sort(function(a,b){return b.percent-a.percent})
+		var table = d3.select("#colors").append("div").append("table")
+			var row = table.append("tr")
+		row.append("th").html("Group<br>Name<br>")
+		row.append("th").html("% Asian <br>Country")
+		row.append("th").html("% Asian <br>Population <br>on screen").attr("class","onScreen")
+			
 		for(var s in sorted){
-			d3.select("#colors").append("div")
-				.html(nationLabels[sorted[s].nation]
-				+" "+sorted[s].percent+"%")
-				.style("color",colorDictionary[nationLabels[sorted[s].nation]])
-				// nationColors["ACS19_5yr_"+sorted[s].nation])
-				.attr("id",sorted[s].nation)
-				.on("mouseover",function(){
-					var nation = d3.select(this).attr("id")
-				})
+			//console.log(sorted[s].nation)
+			var row = table.append("tr")
+			row.append("td").html(nationLabels[sorted[s].nation].split(",").join("<br>")).style("color",colorDictionary[nationLabels[sorted[s].nation]])
+			row.append("td").html(sorted[s].percent+"%")
+			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation).style("font-weight",700).attr("class","onScreen")
+			
+			
 		}
 }
 		   
