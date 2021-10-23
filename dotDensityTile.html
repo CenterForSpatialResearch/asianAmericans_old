@@ -101,54 +101,77 @@ th{
 var colors = ["#ce4dc3","#6edf53","#7642d0","#dccd37","#3f7ee8","#c0e542","#75b83b","#569d3f","#6b7acf","#72dca1","#d84d34","#df7432","#427632","#d2486e","#c88534","#2f3a70","#31679f","#e13d1b","#76a4cb","#75c3bb","#de3797","#659ff1","#659ff1"]
 	
 	
-var nationColors = {"ACS19_5yr_B02018002":colors[0],
-				"ACS19_5yr_B02018003":colors[1],
-				"ACS19_5yr_B02018004":colors[2],
-				"ACS19_5yr_B02018005":colors[3],
-				"ACS19_5yr_B02018006":colors[4],
-				"ACS19_5yr_B02018007":colors[5],
-				"ACS19_5yr_B02018008":colors[6],
-				"ACS19_5yr_B02018009":colors[7],
-				"ACS19_5yr_B02018010":colors[8],
-				"ACS19_5yr_B02018011":colors[9],
-				"ACS19_5yr_B02018012":colors[10],
-				"ACS19_5yr_B02018013":colors[11],
-				"ACS19_5yr_B02018014":colors[12],
-				"ACS19_5yr_B02018015":colors[13],
-				"ACS19_5yr_B02018016":colors[14],
-				"ACS19_5yr_B02018017":colors[15],
-				"ACS19_5yr_B02018018":colors[16],
-				"ACS19_5yr_B02018019":colors[17],
-				"ACS19_5yr_B02018020":colors[18],
-				"ACS19_5yr_B02018021":colors[19],
-				"ACS19_5yr_B02018022":colors[20],
-				"ACS19_5yr_B02018023":colors[21],
-				"ACS19_5yr_B02018024":colors[22]}
+// var nationColors = {"ACS19_5yr_B02018002":colors[0],
+// 				"ACS19_5yr_B02018003":colors[1],
+// 				"ACS19_5yr_B02018004":colors[2],
+// 				"ACS19_5yr_B02018005":colors[3],
+// 				"ACS19_5yr_B02018006":colors[4],
+// 				"ACS19_5yr_B02018007":colors[5],
+// 				"ACS19_5yr_B02018008":colors[6],
+// 				"ACS19_5yr_B02018009":colors[7],
+// 				"ACS19_5yr_B02018010":colors[8],
+// 				"ACS19_5yr_B02018011":colors[9],
+// 				"ACS19_5yr_B02018012":colors[10],
+// 				"ACS19_5yr_B02018013":colors[11],
+// 				"ACS19_5yr_B02018014":colors[12],
+// 				"ACS19_5yr_B02018015":colors[13],
+// 				"ACS19_5yr_B02018016":colors[14],
+// 				"ACS19_5yr_B02018017":colors[15],
+// 				"ACS19_5yr_B02018018":colors[16],
+// 				"ACS19_5yr_B02018019":colors[17],
+// 				"ACS19_5yr_B02018020":colors[18],
+// 				"ACS19_5yr_B02018021":colors[19],
+// 				"ACS19_5yr_B02018022":colors[20],
+// 				"ACS19_5yr_B02018023":colors[21],
+// 				"ACS19_5yr_B02018024":colors[22]}
 	
-	
-var colorDictionary={"Asian Indian":"#1cabfc",
-"Bangladeshi":"#00b8fe",
-"Bhutanese":"#ff00b6",
-"Burmese":"#ff83e1",
-"Cambodian":"#fe01e8",
-"Chinese, Except Taiwanese":"#fe5c50",
-"Filipino":"#a502ff",
-"Hmong":"#fe8c00",
-"Indonesian":"#f95bff",
-"Japanese":"#ff010d",
-"Korean":"#ff0d7a",
-"Laotian":"#ff44d0",
-"Malaysian":"#ff44d0",
-"Mongolian":"#ffbc5f",
-"Nepalese":"#37ffd9",
-"Okinawan":"#fd0f79",
-"Pakistani":"#02ff74",
-"Sri Lankan":"#ff7bc2",
-"Taiwanese":"#ff018f",
-"Thai":"#ff12eb",
-"Vietnamese":"#ff01cc",
-"Other Asian, Specified":"#888888",
-"Other Asian, Not Specified":"#888888"}
+	//
+// var colorDictionary={"Asian Indian":"#1cabfc",
+// "Bangladeshi":"#00b8fe",
+// "Bhutanese":"#ff00b6",
+// "Burmese":"#ff83e1",
+// "Cambodian":"#fe01e8",
+// "Chinese, Except Taiwanese":"#fe5c50",
+// "Filipino":"#a502ff",
+// "Hmong":"#fe8c00",
+// "Indonesian":"#f95bff",
+// "Japanese":"#ff010d",
+// "Korean":"#ff0d7a",
+// "Laotian":"#ff44d0",
+// "Malaysian":"#ff44d0",
+// "Mongolian":"#ffbc5f",
+// "Nepalese":"#37ffd9",
+// "Okinawan":"#fd0f79",
+// "Pakistani":"#02ff74",
+// "Sri Lankan":"#ff7bc2",
+// "Taiwanese":"#ff018f",
+// "Thai":"#ff12eb",
+// "Vietnamese":"#ff01cc",
+// "Other Asian, Specified":"#888888",
+// "Other Asian, Not Specified":"#888888"}
+var colorDictionary={"Asian Indian":"#1CABFC",
+"Bangladeshi":"#00A5A0",
+"Bhutanese":"#004A82",
+"Burmese":"#0055FF",
+"Cambodian":"#330033",
+"Chinese, Except Taiwanese":"#FF010D",
+"Filipino":"#A502FF",
+"Hmong":"#660033",
+"Indonesian":"#660066",
+"Japanese":"#d87422",
+"Korean":"#deae2a",
+"Laotian":"#5555BF",
+"Malaysian":"#FF33D9",
+"Mongolian":"#99CC00",
+"Nepalese":"#006633",
+"Okinawan":"#CC3333",
+"Pakistani":"#79dc53",
+"Sri Lankan":"#009966",
+"Taiwanese":"#FF6666",
+"Thai":"#990099",
+"Vietnamese":"#990066",
+"Other Asian, Specified":"#999999",
+"Other Asian, Not Specified":"#999999"}
 	
 var nationLabels ={"B02018002":"Asian Indian",
        "B02018003":"Bangladeshi",
@@ -222,10 +245,10 @@ function drawMap(data){
 	var tractDictionary = makeTractDictionary(tracts)
 	var tractTotalsDictionary = makeTractDictionary(data[2])
 	//console.log(tracts)
-	mapboxgl.accessToken = 'pk.eyJ1IjoiampqaWlhMTIzIiwiYSI6ImNpbDQ0Z2s1OTN1N3R1eWtzNTVrd29lMDIifQ.gSWjNbBSpIFzDXU2X5YCiQ';
+	mapboxgl.accessToken = 'pk.eyJ1IjoiYzRzci1nc2FwcCIsImEiOiJja2J0ajRtNzMwOHBnMnNvNnM3Ymw5MnJzIn0.fsTNczOFZG8Ik3EtO9LdNQ';
 	map = new mapboxgl.Map({
 	container: 'map', // container ID
-	style: 'mapbox://styles/jjjiia123/ckuoxbxs46sgg17phna2nhj4b', // custom style url from https://studio.mapbox.com/
+	style: 'mapbox://styles/c4sr-gsapp/ckv2pcy3w2fiv15qtw0op20nd', // custom style url from https://studio.mapbox.com/
 	center: [ -73.86096055473216, 40.75430783952925], // starting position
 	zoom: 10.5, // starting zoom
 	maxZoom:11.5,
@@ -242,19 +265,19 @@ function drawMap(data){
 	 );
 	
  	map.on("load",function(){
-			map.setPaintProperty("tracts-11r8l4", "line-opacity",0)
+			map.setPaintProperty("tracts", "line-opacity",0)
 		
     	drawKey(data[0][0],data[1])
 		
 		map.on("mousemove",function(e){
-			var features = map.queryRenderedFeatures(e.point,{layers: ["tracts-11r8l4"]})[0];
+			var features = map.queryRenderedFeatures(e.point,{layers: ["tracts"]})[0];
 			if(features!=null){
-				var geoId = features.properties.FIPS
+				var geoId = features.properties.GEOID
 				d3.select("#onScreen_header").html("% of Asian <br>Population in <br>tract "+geoId)
 				//console.log(tractDictionary[geoId])
 			
-			map.setPaintProperty("tracts-11r8l4", "line-opacity",['match',['get', 'FIPS'],geoId,1,0])
-			//map.setPaintProperty("tracts-11r8l4", "line-width",['match',['get', 'FIPS'],geoId,2,0])
+			map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
+			//map.setPaintProperty("tracts", "line-width",['match',['get', 'FIPS'],geoId,2,0])
 			
 			
 				var totalAsians =tractDictionary[geoId]["ACS19_5yr_B02018001"]
@@ -315,14 +338,16 @@ function drawMap(data){
 //
 // 	 	})
  		// console.log("test")
+console.log(map.getStyle().layers)
 		 //map.setLayoutProperty("points-nationality-9",'icon-allow-overlap', false)//: 
-		
+		 //map.setPaintProperty("background",'background-color',"#000000")
  		 var layers =  map.getStyle().layers
- 		  	 for(var l =0;l<10;l++){
- 		   			var layerId = "points-nationality-"+l
+ 		  	 for(var l =0;l<6;l++){
+ 		   			var layerId = "group-"+l
 				 if(layerId!="mapbox-satellite"&& layerId!="background"&& layerId!="country-boundaries"){
 				 //	console.log(layerId)
-					 map.setPaintProperty(layerId,'circle-radius',{'base': 1,'stops': [[4,1],[5, 1],[8,.8],[11,.8],[12, .6]]})
+					
+					 map.setPaintProperty(layerId,'circle-radius',.7)
 					 map.setPaintProperty(layerId,'circle-opacity',{'base': .5,'stops': [[4, .5],[8, 1],[12, 1]]})
 					  map.setPaintProperty(layerId, "circle-color", ['match',
 							['get', 'nation'],
@@ -349,7 +374,7 @@ function drawMap(data){
 							"ACS19_5yr_B02018022",colorDictionary[nationLabels["B02018022"]],
 							"ACS19_5yr_B02018023",colorDictionary[nationLabels["B02018023"]],
 							"ACS19_5yr_B02018024",colorDictionary[nationLabels["B02018024"]],
-							/* other */ '#555555']
+							/* other */ '#888888']
  
   					 )
 				 }
