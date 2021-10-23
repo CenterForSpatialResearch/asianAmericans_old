@@ -282,6 +282,8 @@ function drawMap(data){
 			
 				var totalAsians =tractDictionary[geoId]["ACS19_5yr_B02018001"]
 				var totalPop = tractTotalsDictionary[geoId]["SE_A00001_001"]
+				d3.select("#totalInTract").html(totalPop+"<br> Persons<br><br>")
+				
 				if(totalPop!=0){
 					var percentAsians = Math.round(totalAsians/totalPop*10000)/100+"%"
 					var nations = ""
@@ -385,6 +387,8 @@ console.log(map.getStyle().layers)
 		   
 function drawKey(data,tracts){
 	var percentDictionary = []
+	
+	
 	for(var n in nationLabels){
 			var percent = data["PCT_ACS19_5yr_"+n]
 			var value = data["ACS19_5yr_"+n]
@@ -396,8 +400,15 @@ function drawKey(data,tracts){
 			var row = table.append("tr")
 		row.append("th").html("Group<br>Name<br>")
 		row.append("th").html("% of Asian Population<br>in Country")
-		row.append("th").html("% of Asian <br>Population <br>in highlighted tract").attr("class","onScreen").attr("id","onScreen_header")
-			
+		row.append("th").html("% of Asian <br>Population <br>in highlighted tract")
+				.attr("class","onScreen").attr("id","onScreen_header")
+		
+		var row = table.append("tr")
+		row.append("th").html("")
+		row.append("th").html(data["ACS19_5yr_B02018001"]+" Persons<br><br>")
+	.style("font-style","italic")
+		row.append("th").html("").style("font-style","italic").attr("id","totalInTract").style("font-weight","bold")
+		
 		for(var s in sorted){
 			//console.log(sorted[s].nation)
 			var row = table.append("tr")
