@@ -243,7 +243,10 @@ function makeTractDictionary(data){
 	var dict ={}
 	for(var i in data){
 		//console.log(data[i])
-		var key = data[i]["Geo_FIPS"]
+		var key = String(data[i]["Geo_FIPS"])
+		if(key.length==10){
+			key = "0"+key
+		}
 		var values = data[i]
 		dict[key]=values
 	}
@@ -276,14 +279,17 @@ function drawMap(data){
 	var tractDictionary = makeTractDictionary(tracts)
 	var tractTotalsDictionary = makeTractDictionary(data[2])
 	var tractShape = data[3]
+	
+		//console.log(tractDictionary)
+	
 	mapboxgl.accessToken = 'pk.eyJ1IjoiYzRzci1nc2FwcCIsImEiOiJja2J0ajRtNzMwOHBnMnNvNnM3Ymw5MnJzIn0.fsTNczOFZG8Ik3EtO9LdNQ';
 	map = new mapboxgl.Map({
 	container: 'map', // container ID
 	style: 'mapbox://styles/c4sr-gsapp/ckv2pcy3w2fiv15qtw0op20nd', // custom style url from https://studio.mapbox.com/
-	center: [ -73.98, 40.75430783952925], // starting position
-	zoom: 10.5, // starting zoom
+	center: [-118.1725,34.0], // starting position
+	zoom: 10, // starting zoom
 	maxZoom:11.5,
-	minZoom:7//,
+	minZoom:5//,
 	//icon-allow-overlap:true
 	});
 	
@@ -346,12 +352,13 @@ function drawMap(data){
 				}
 		});
 		
-		
 		map.on("mousemove","tracts",function(e){
 			var features = e.features[0]//map.queryRenderedFeatures(e.point,{layers: ["tracts"]})[0];
 			if(features!=null){
-				var geoId = features.properties.GEOID
+				var geoId = String(features.properties.GEOID)
 				d3.select("#onScreen_header").html("Tract "+geoId)
+				//console.log(geoId)
+				//console.log(tractDictionary[geoId])
 				//console.log(tractDictionary[geoId])
 			//	map.setFilter('tracts', ['==', 'GEOID',geoId]);			 //
 			//  map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
