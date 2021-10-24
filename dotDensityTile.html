@@ -405,7 +405,7 @@ function drawKey(data,tracts){
 		row.append("th").html("Tract<br><br>").attr("id","onScreen_header").style("font-weight","bold")
 
 				//.attr("class","onScreen").attr("id","onScreen_header")
-		var row = table.append("tr")
+		var row = table.append("tr")//
 		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
 		row.append("th").html("Asian Pop.").style("font-size","11px")
 		row.append("th").html("Asian Pop.").style("font-weight","bold").style("font-size","11px")
@@ -423,46 +423,65 @@ function drawKey(data,tracts){
 		row.append("td").html("")//"% of Tract<br>Asian <br>Population")
 			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
 	
-	
+		var highlighted = "a"
 		
 		for(var s in sorted){
-			var row = table.append("tr").attr("id",sorted[s].nation)
+			var row = table.append("tr")
+			.attr("id",sorted[s].nation)
 			.attr("class","nationRow")
 			.style("cursor","pointer")
 			.attr("clicked",false)
 			.on("mouseover",function(){
-				d3.select(this).style("background-color","#ddd")
+				var id = d3.select(this).attr("id")
+				d3.selectAll("#"+id).style("background-color","#ddd")
+				
+					//d3.select(this).style("background-color","#aaa")
 			})
 			.on("mouseout",function(){
-				//d3.selectAll(".nationRow").attr("clicked",false).style("background-color","#fff")//.style("border","none")
-				//d3.select(this).style("background-color","#ddd").attr("clicked",true)
-				
-				var clicked = d3.select(this).attr("clicked")
-				
-						// d3.select(this).style("background-color","#fff")
-					if(clicked==true){
- 				console.log(clicked)
-						d3.select(this).style("background-color","#ddd")
-					}else{
-						console.log("ok")
-						d3.select(this).style("background-color","#fff")
-					}
+				var id = d3.select(this).attr("id")
+				d3.selectAll(".nationRow").style("background-color","#fff")
+				d3.selectAll("#"+highlighted).style("background-color","#ddd")
+				console.log(highlighted)
 			})
 			.on("click",function(){
-				d3.selectAll(".nationRow").attr("clicked",false).style("background-color","#fff")//.style("border","none")
-				d3.select(this).style("background-color","gold").attr("clicked",true)//.style("border","1px solid black")
+				d3.selectAll(".nationRow").style("background-color","#fff")
+				//d3.select(this).style("background-color","#aaaaaa")
 				var id = d3.select(this).attr("id")
-				map.setFilter('group-0', ['==', 'nation',"ACS19_5yr_"+id]);
-				map.setFilter('group-1', ['==', 'nation',"ACS19_5yr_"+id]);
-				map.setFilter('group-2', ['==', 'nation',"ACS19_5yr_"+id]);
-				map.setFilter('group-3', ['==', 'nation',"ACS19_5yr_"+id]);
-				map.setFilter('group-4', ['==', 'nation',"ACS19_5yr_"+id]);
-				map.setFilter('group-5', ['==', 'nation',"ACS19_5yr_"+id]);
-				
+				d3.selectAll("#"+id).style("background-color","#ddd")
+			
+				if(id==highlighted){
+					d3.selectAll("#"+highlighted).style("background-color","#fff")
+					highlighted = "a"
+					
+					map.setFilter('group-0', ['!=', 'nation',"x"]);
+					map.setFilter('group-1', ['!=', 'nation',"x"]);
+					map.setFilter('group-2', ['!=', 'nation',"x"]);
+					map.setFilter('group-3', ['!=', 'nation',"x"]);
+					map.setFilter('group-4', ['!=', 'nation',"x"]);
+					map.setFilter('group-5', ['!=', 'nation',"x"]);
+				}else{
+					map.setFilter('group-0', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-1', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-2', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-3', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-4', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-5', ['==', 'nation',"ACS19_5yr_"+id]);
+					highlighted = id
+				}
 			})
-			row.append("td").html(nationLabels[sorted[s].nation].split(",").join("<br>")).style("color",colorDictionary[nationLabels[sorted[s].nation]])
+			row.append("td").html(nationLabels[sorted[s].nation].split(",").join("<br>"))
+			.style("color",colorDictionary[nationLabels[sorted[s].nation]])
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			
 			row.append("td").html(sorted[s].percent+"%")
-			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation).style("font-weight",700).attr("class","onScreen")
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			
+			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation)
+			.style("font-weight",700).attr("class","onScreen")
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
 			
 			
 		}
