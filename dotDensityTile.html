@@ -25,7 +25,7 @@ body { margin: 0; padding: 0;
 	padding:10px;
 }
 #colors{
-	position:fixed;top:70px;left:5px;
+	position:fixed;top:65px;left:5px;
 	z-index:999;
 	padding:10px;
 	background-color:rgba(255,255,255,.9);
@@ -66,14 +66,37 @@ body { margin: 0; padding: 0;
 	background-color:rgba(255,255,255,1);
 	background-color:black;
 	color:white;
+    box-shadow:5px 5px 10px rgba(0,0,0,.3);  
 }
 td{
 	line-height:100%;
+	width:100px;
 }
 th{
+	width:100px;
 	text-align:left;
 	font-weight:300;
-	padding-right:10px;
+	font-size:13px;
+	padding:0px;
+}
+#infoButton{
+	position:fixed;
+	left:10px;
+	bottom:10px;
+	background-color:black;
+	color:white;
+	padding:5px;
+	letter-spacing:1px;
+	cursor:pointer;
+}
+#dotKey{
+	font-size:16px;
+	background-color:black;
+	color:white;
+	position:fixed;
+	bottom:5px;
+	left:5px;
+	padding:5px;
 }
 </style>
 </head>
@@ -90,10 +113,14 @@ th{
 	
 <!--	<div id="zoom">zoom</div>
 	<div id="center">center</div> -->
-	<div id="colors"></div>
+	<div id="colors">
+		
+	</div>
 <div id="map">
 	
 </div>
+<div id="dotKey">1 dot = 1 person</div>
+	<!-- <div id="infoButton">About</div> -->
 
 <!-- <div id="popup">tract info</div> -->
 <script>
@@ -240,6 +267,9 @@ function sumOfTracts(tracts,tractsData){
 	//console.log(onScreen)
 	return onScreen
 }
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 function drawMap(data){
 	var tracts = data[1]
 	var tractDictionary = makeTractDictionary(tracts)
@@ -249,7 +279,7 @@ function drawMap(data){
 	map = new mapboxgl.Map({
 	container: 'map', // container ID
 	style: 'mapbox://styles/c4sr-gsapp/ckv2pcy3w2fiv15qtw0op20nd', // custom style url from https://studio.mapbox.com/
-	center: [ -73.86096055473216, 40.75430783952925], // starting position
+	center: [ -73.98, 40.75430783952925], // starting position
 	zoom: 10.5, // starting zoom
 	maxZoom:11.5,
 	minZoom:7//,
@@ -259,32 +289,39 @@ function drawMap(data){
 		 new MapboxGeocoder({
 			 accessToken: mapboxgl.accessToken,
 			 mapboxgl: mapboxgl,
-			  zoom: 11.5
+			  zoom: 11.5//,
+			// countries: 'us'
 			 
 		 })
 	 );
+		d3.selectAll(".mapboxgl-ctrl-logo").remove()
 	
  	map.on("load",function(){
 			map.setPaintProperty("tracts", "line-opacity",0)
 		
     	drawKey(data[0][0],data[1])
+		d3.selectAll(".mapboxgl-ctrl-logo").remove()
+			 map.setPaintProperty("tracts_hover", "line-opacity",0)
 		
-		map.on("mousemove",function(e){
-			var features = map.queryRenderedFeatures(e.point,{layers: ["tracts"]})[0];
+		map.on("mousemove","tracts",function(e){
+			var features = e.features[0]//map.queryRenderedFeatures(e.point,{layers: ["tracts"]})[0];
 			if(features!=null){
 				var geoId = features.properties.GEOID
-				d3.select("#onScreen_header").html("% of Asian <br>Population in <br>tract "+geoId)
+				d3.select("#onScreen_header").html("Tract "+geoId)
 				//console.log(tractDictionary[geoId])
+			//	map.setFilter('tracts', ['==', 'GEOID',geoId]);			 //
+			 // 						//
+			 // map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
+			 // map.setPaintProperty("tracts", "line-color","#000000")
 			
-			map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
-			//map.setPaintProperty("tracts", "line-width",['match',['get', 'FIPS'],geoId,2,0])
+			
+				var totalAsians =parseInt(tractDictionary[geoId]["ACS19_5yr_B02018001"])
+				var totalPop = parseInt(tractTotalsDictionary[geoId]["SE_A00001_001"])
+				d3.select("#totalInTract").html(numberWithCommas(totalAsians))
 			
 			
-				var totalAsians =tractDictionary[geoId]["ACS19_5yr_B02018001"]
-				var totalPop = tractTotalsDictionary[geoId]["SE_A00001_001"]
-				d3.select("#totalInTract").html(totalPop+"<br> Persons<br><br>")
-				
-				if(totalPop!=0){
+				if(totalPop!=0 && totalAsians!=0){
+					//console.log("data not 0")
 					var percentAsians = Math.round(totalAsians/totalPop*10000)/100+"%"
 					var nations = ""
 					for(var n in nationLabels){
@@ -298,51 +335,16 @@ function drawMap(data){
 						}else{
 							d3.select("#onScreen_"+n).html("--")
 						}
-					}					//
-					// var mouseX = e.point.x
-					// var mouseY = e.point.y
-					// d3.select("#popup").style("left",(mouseX+10)+"px")
-					// d3.select("#popup").style("top",mouseY+"px")
-			
-					// d3.select("#popup").html(function(d){
-// 					return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> "+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians+" ("+percentAsians+" of Total)<br><br>"+nations
-//
-// 					})
+					}	
 				}else{
-					// d3.select("#popup").html(function(d){
-	// 					return "<strong>Tract "+geoId+"</strong><br>"+"<strong>Total Population:</strong> " 						+totalPop+"<br>"+"<strong>Total Asian:</strong> "+totalAsians})
-	 				}
+					for(var n in nationLabels){
+							d3.select("#onScreen_"+n).html("--")
+					
+					}
+				}
 			}
 		})
 		
-	
-	 	// map.on("move",function(){
-// 	 		d3.select("#zoom").html("zoom: "+map.getZoom())
-// 	 		d3.select("#center").html("center: "+map.getCenter().lng+", "+map.getCenter().lat)
-//
-// 			var zoom = map.getZoom()
-// 				//console.log(zoom)
-//
-// 			if(zoom<10.1){
-// 				d3.selectAll(".onScreen").style("visibility","hidden")
-// 			}else{
-// 				d3.selectAll(".onScreen").style("visibility","visible")
-// 	            var features = map.queryRenderedFeatures({
-// 	                layers: ['tracts-11r8l4']
-// 	            });
-// 				var onScreenTotals = sumOfTracts(features,tractDictionary)
-// 				//var onScreenTotalAsian = onScreenTotals[]
-// 				for(var os in onScreenTotals){
-// 					d3.select("#onScreen_"+os).html(parseInt(onScreenTotals[os]/onScreenTotals["all"]*10000)/100+"%")
-// 				}
-// 			}
-//
-//
-// 	 	})
- 		// console.log("test")
-console.log(map.getStyle().layers)
-		 //map.setLayoutProperty("points-nationality-9",'icon-allow-overlap', false)//: 
-		 //map.setPaintProperty("background",'background-color',"#000000")
  		 var layers =  map.getStyle().layers
  		  	 for(var l =0;l<6;l++){
  		   			var layerId = "group-"+l
@@ -397,21 +399,67 @@ function drawKey(data,tracts){
 
 		var sorted = percentDictionary//.sort(function(a,b){return b.percent-a.percent})
 		var table = d3.select("#colors").append("div").append("table")
-			var row = table.append("tr")
-		row.append("th").html("Group<br>Name<br>")
-		row.append("th").html("% of Asian Population<br>in Country")
-		row.append("th").html("% of Asian <br>Population <br>in highlighted tract")
-				.attr("class","onScreen").attr("id","onScreen_header")
-		
 		var row = table.append("tr")
 		row.append("th").html("")
-		row.append("th").html(data["ACS19_5yr_B02018001"]+" Persons<br><br>")
-	.style("font-style","italic")
-		row.append("th").html("").style("font-style","italic").attr("id","totalInTract").style("font-weight","bold")
+		row.append("th").html("United<br>States<br>")
+		row.append("th").html("Tract<br><br>").attr("id","onScreen_header").style("font-weight","bold")
+
+				//.attr("class","onScreen").attr("id","onScreen_header")
+		var row = table.append("tr")
+		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
+		row.append("th").html("Asian Pop.").style("font-size","11px")
+		row.append("th").html("Asian Pop.").style("font-weight","bold").style("font-size","11px")
+	
+		var row = table.append("tr")
+		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
+		row.append("th").html(numberWithCommas(data["ACS19_5yr_B02018001"]))
+		row.append("th").html("").attr("id","totalInTract").style("font-weight","bold")
+	
+		
+		var row = table.append("tr")
+		row.append("td").html("<br>Click below <br>to filter").style("font-style","italic")
+		row.append("td").html("")//"% of Total<br> Asian <br>Population")
+			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
+		row.append("td").html("")//"% of Tract<br>Asian <br>Population")
+			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
+	
+	
 		
 		for(var s in sorted){
-			//console.log(sorted[s].nation)
-			var row = table.append("tr")
+			var row = table.append("tr").attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			.style("cursor","pointer")
+			.attr("clicked",false)
+			.on("mouseover",function(){
+				d3.select(this).style("background-color","#ddd")
+			})
+			.on("mouseout",function(){
+				//d3.selectAll(".nationRow").attr("clicked",false).style("background-color","#fff")//.style("border","none")
+				//d3.select(this).style("background-color","#ddd").attr("clicked",true)
+				
+				var clicked = d3.select(this).attr("clicked")
+				
+						// d3.select(this).style("background-color","#fff")
+					if(clicked==true){
+ 				console.log(clicked)
+						d3.select(this).style("background-color","#ddd")
+					}else{
+						console.log("ok")
+						d3.select(this).style("background-color","#fff")
+					}
+			})
+			.on("click",function(){
+				d3.selectAll(".nationRow").attr("clicked",false).style("background-color","#fff")//.style("border","none")
+				d3.select(this).style("background-color","gold").attr("clicked",true)//.style("border","1px solid black")
+				var id = d3.select(this).attr("id")
+				map.setFilter('group-0', ['==', 'nation',"ACS19_5yr_"+id]);
+				map.setFilter('group-1', ['==', 'nation',"ACS19_5yr_"+id]);
+				map.setFilter('group-2', ['==', 'nation',"ACS19_5yr_"+id]);
+				map.setFilter('group-3', ['==', 'nation',"ACS19_5yr_"+id]);
+				map.setFilter('group-4', ['==', 'nation',"ACS19_5yr_"+id]);
+				map.setFilter('group-5', ['==', 'nation',"ACS19_5yr_"+id]);
+				
+			})
 			row.append("td").html(nationLabels[sorted[s].nation].split(",").join("<br>")).style("color",colorDictionary[nationLabels[sorted[s].nation]])
 			row.append("td").html(sorted[s].percent+"%")
 			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation).style("font-weight",700).attr("class","onScreen")
