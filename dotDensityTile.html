@@ -62,8 +62,8 @@ body { margin: 0; padding: 0;
 	z-index:999;
 	margin:5px;
 	padding:10px;
-	border:1px solid black;
 	background-color:rgba(255,255,255,1);
+	width:265px;
 	background-color:black;
 	color:white;
     box-shadow:5px 5px 10px rgba(0,0,0,.3);  
@@ -228,10 +228,11 @@ var nationLabels ={"B02018002":"Asian Indian",
 var country = d3.csv("R12930229_SL010.csv")
 var tractAsians = d3.csv("R12929173_SL140_reduced_nations.csv")
 var tractTotals = d3.csv("R12931419_SL140.csv")
+var tractsGeo = d3.json("tracts_simplified_withId.geojson")
 
 var map
 	   
-Promise.all([country,tractAsians,tractTotals])
+Promise.all([country,tractAsians,tractTotals,tractsGeo])
 .then(function(data){
     drawMap(data)
 })
@@ -274,7 +275,7 @@ function drawMap(data){
 	var tracts = data[1]
 	var tractDictionary = makeTractDictionary(tracts)
 	var tractTotalsDictionary = makeTractDictionary(data[2])
-	//console.log(tracts)
+	var tractShape = data[3]
 	mapboxgl.accessToken = 'pk.eyJ1IjoiYzRzci1nc2FwcCIsImEiOiJja2J0ajRtNzMwOHBnMnNvNnM3Ymw5MnJzIn0.fsTNczOFZG8Ik3EtO9LdNQ';
 	map = new mapboxgl.Map({
 	container: 'map', // container ID
@@ -285,6 +286,7 @@ function drawMap(data){
 	minZoom:7//,
 	//icon-allow-overlap:true
 	});
+	
 	 map.addControl(
 		 new MapboxGeocoder({
 			 accessToken: mapboxgl.accessToken,
@@ -297,11 +299,53 @@ function drawMap(data){
 		d3.selectAll(".mapboxgl-ctrl-logo").remove()
 	
  	map.on("load",function(){
+		map.addSource('tract_simple', {
+				'type': 'geojson',
+			'data':tractShape
+		});
+		
+		map.addLayer({
+		'id': 'tract_test',
+		'type': 'line',
+		'source': 'tract_simple',
+		'layout': {},
+		'paint': {
+		'line-width':1,
+		'line-color': '#000000',
+		'line-opacity': [
+		'case',
+		['boolean', ['feature-state', 'hover'], false],
+		1,
+		0
+		]
+		}
+		});
+		
+		var hoveredStateId = null
 			map.setPaintProperty("tracts", "line-opacity",0)
+			  map.setPaintProperty("tracts", "line-color","#000000")
 		
     	drawKey(data[0][0],data[1])
 		d3.selectAll(".mapboxgl-ctrl-logo").remove()
-			 map.setPaintProperty("tracts_hover", "line-opacity",0)
+		
+			 //map.setPaintProperty("tracts_hover", "line-opacity",0)
+		map.on('mousemove', 'tract_test', (e) => {
+				if (e.features.length > 0) {
+					if (hoveredStateId !== null) {
+						map.setFeatureState(
+							{ source: 'tract_simple', id: hoveredStateId },
+							{ hover: false }
+						);
+					}
+					hoveredStateId = e.features[0].id;
+					//console.log(hoverStateId)
+					map.setFeatureState(
+						{ source: 'tract_simple', id: hoveredStateId },
+						{ hover: true }
+					);
+				}
+		});
+		
 		
 		map.on("mousemove","tracts",function(e){
 			var features = e.features[0]//map.queryRenderedFeatures(e.point,{layers: ["tracts"]})[0];
@@ -310,14 +354,10 @@ function drawMap(data){
 				d3.select("#onScreen_header").html("Tract "+geoId)
 				//console.log(tractDictionary[geoId])
 			//	map.setFilter('tracts', ['==', 'GEOID',geoId]);			 //
-			 // 						//
-			 // map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
-			 // map.setPaintProperty("tracts", "line-color","#000000")
-			
-			
+			//  map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
 				var totalAsians =parseInt(tractDictionary[geoId]["ACS19_5yr_B02018001"])
 				var totalPop = parseInt(tractTotalsDictionary[geoId]["SE_A00001_001"])
-				d3.select("#totalInTract").html(numberWithCommas(totalAsians))
+				d3.select("#totalInTract").html(numberWithCommas(totalAsians)).style("font-size","16px")
 			
 			
 				if(totalPop!=0 && totalAsians!=0){
@@ -412,12 +452,12 @@ function drawKey(data,tracts){
 	
 		var row = table.append("tr")
 		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
-		row.append("th").html(numberWithCommas(data["ACS19_5yr_B02018001"]))
+		row.append("th").html(numberWithCommas(data["ACS19_5yr_B02018001"])).style("font-size","16px")
 		row.append("th").html("").attr("id","totalInTract").style("font-weight","bold")
 	
 		
 		var row = table.append("tr")
-		row.append("td").html("<br>Click below <br>to filter").style("font-style","italic")
+		row.append("td").html("<br>Click to filter").style("font-style","italic")
 		row.append("td").html("")//"% of Total<br> Asian <br>Population")
 			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
 		row.append("td").html("")//"% of Tract<br>Asian <br>Population")
@@ -441,7 +481,7 @@ function drawKey(data,tracts){
 				var id = d3.select(this).attr("id")
 				d3.selectAll(".nationRow").style("background-color","#fff")
 				d3.selectAll("#"+highlighted).style("background-color","#ddd")
-				console.log(highlighted)
+				//console.log(highlighted)
 			})
 			.on("click",function(){
 				d3.selectAll(".nationRow").style("background-color","#fff")
@@ -480,7 +520,7 @@ function drawKey(data,tracts){
 			
 			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation)
 			.style("font-weight",700).attr("class","onScreen")
-			.attr("id",sorted[s].nation)
+			//.attr("id",sorted[s].nation)
 			.attr("class","nationRow")
 			
 			
