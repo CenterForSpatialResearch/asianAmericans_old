@@ -90,13 +90,26 @@ th{
 	cursor:pointer;
 }
 #dotKey{
-	font-size:16px;
+	font-size:24px;
 	background-color:black;
 	color:white;
 	position:fixed;
 	bottom:5px;
 	left:5px;
 	padding:5px;
+}
+#layerToggle{
+	font-size:12px;
+	position:fixed;
+	bottom:45px;
+	left:5px;
+	padding:0px;
+}
+.layerToggle{
+	border:1px solid black;
+	padding:5px;
+	margin-top:3px;
+	background-color:white;
 }
 </style>
 </head>
@@ -119,6 +132,11 @@ th{
 <div id="map">
 	
 </div>
+<div id="layerToggle">
+	<div id="labels" class="layerToggle">Hide Place Names</div>
+	<div id="roads" class="layerToggle">Hide Roads</div>
+</div>
+
 <div id="dotKey">1 dot = 1 person</div>
 	<!-- <div id="infoButton">About</div> -->
 
@@ -305,6 +323,36 @@ function drawMap(data){
 		d3.selectAll(".mapboxgl-ctrl-logo").remove()
 	
  	map.on("load",function(){
+		var roadsShow = true
+		var labelsShow = true
+		console.log(map.getStyle().layers)
+		
+		d3.select("#labels").style("cursor","pointer").on("click",function(){
+			if(labelsShow==true){
+				d3.select(this).html("Show Place Names")
+				labelsShow=false
+				map.setLayoutProperty("place-label", 'visibility', 'none');
+				
+			}else{
+				d3.select(this).html("Hide Place Names")
+				labelsShow=true
+				map.setLayoutProperty("place-label", 'visibility', 'visible');
+			}
+		})
+		
+		d3.select("#roads").style("cursor","pointer").on("click",function(){
+			if(roadsShow==true){
+				d3.select(this).html("Show Roads")
+				roadsShow=false
+				map.setLayoutProperty("road", 'visibility', 'none');
+				
+			}else{
+				d3.select(this).html("Hide Roads")
+				roadsShow=true
+				map.setLayoutProperty("road", 'visibility', 'visible');
+			}
+		})
+		
 		map.addSource('tract_simple', {
 				'type': 'geojson',
 			'data':tractShape
