@@ -286,9 +286,9 @@ function drawMap(data){
 	map = new mapboxgl.Map({
 	container: 'map', // container ID
 	style: 'mapbox://styles/c4sr-gsapp/ckv2pcy3w2fiv15qtw0op20nd', // custom style url from https://studio.mapbox.com/
-	center: [-73.96888937812909,40.7], // starting position
+	center: [-73.96888937812909,40.75], // starting position
 	zoom: 11, // starting zoom
-	maxZoom:11.6,
+	maxZoom:11.5,
 	minZoom:5//,
 	//icon-allow-overlap:true
 	});
@@ -349,12 +349,8 @@ function drawMap(data){
 						{ source: 'tract_simple', id: hoveredStateId },
 						{ hover: true }
 					);
-				}
-		});
-		
-		map.on("mousemove","tracts",function(e){
-			var features = e.features[0]//map.queryRenderedFeatures(e.point,{layers: ["tracts"]})[0];
-			if(features!=null){
+			
+				var features = e.features[0]
 				var geoId = String(features.properties.GEOID)
 				d3.select("#onScreen_header").html("Tract "+geoId)
 				//console.log(geoId)
