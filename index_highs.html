@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Asian American Dot Density</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+	<script src="top10Tracts.js"></script>
+	<script src="highestCentroids.js"></script>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+<style>
+body { margin: 0; padding: 0; 
+	font-family:helvetica;
+}
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+#zoom{
+	position:fixed;top:0px;right:0px;
+	z-index:999;
+	padding:10px;
+}
+#center{
+	position:fixed;top:15px;right:0px;
+	z-index:999;
+	padding:10px;
+}
+#colors{
+	position:fixed;top:65px;left:5px;
+	z-index:999;
+	padding:10px;
+	background-color:rgba(255,255,255,.9);
+	font-size:11px;
+/*	border:1px solid black;
+*/	width:265px;
+    box-shadow:5px 5px 10px rgba(0,0,0,.3);  
+}
+#popup{
+	position:fixed;bottom:5px;left:5px;
+	z-index:999;
+	padding:10px;
+	background-color:rgba(255,255,255,1);
+	/*border:1px solid black;
+*/font-size:11px;
+    box-shadow:5px 5px 10px rgba(0,0,0,.3);  
+	
+}
+#title{
+	font-size:16px;
+	letter-spacing:1px;
+	z-index:999;
+	width:100%;
+}
+#subtitle{
+	font-size:11px;
+	letter-spacing:1px;
+	z-index:999;
+	width:100%;	
+	padding-top:10px;
+}
+#header{
+	position:fixed;top:0px;left:0px;
+	z-index:999;
+	margin:5px;
+	padding:10px;
+	background-color:rgba(255,255,255,1);
+	width:265px;
+	background-color:black;
+	color:white;
+    box-shadow:5px 5px 10px rgba(0,0,0,.3);  
+}
+td{
+	line-height:100%;
+	width:100px;
+}
+th{
+	width:100px;
+	text-align:left;
+	font-weight:300;
+	font-size:13px;
+	padding:0px;
+}
+#infoButton{
+	position:fixed;
+	left:10px;
+	bottom:10px;
+	background-color:black;
+	color:white;
+	padding:5px;
+	letter-spacing:1px;
+	cursor:pointer;
+}
+#dotKey{
+	font-size:24px;
+	background-color:black;
+	color:white;
+	position:fixed;
+	bottom:5px;
+	left:5px;
+	padding:5px;
+}
+#layerToggle{
+	font-size:12px;
+	position:fixed;
+	bottom:45px;
+	left:5px;
+	padding:0px;
+}
+.layerToggle{
+	border:1px solid black;
+	padding:5px;
+	margin-top:3px;
+	background-color:white;
+}
+#highs{
+	width:100px;
+	height:100px;
+	position:fixed;
+	top:100px;
+	right:10px;
+	z-index:999;
+	border:1px solid black;
+}
+</style>
+</head>
+<body>
+	<div id="header">
+		<div id="title">Asian American Dot Density Map</div>
+		<div id="subtitle">Based on 2015 - 2019 5 year ACS estimates</div>
+	</div>
+	<!-- <div id="menu">
+		Diversity
+		Concentration
+		Absence
+	</div> -->
+	
+<!--	<div id="zoom">zoom</div>
+	<div id="center">center</div> -->
+	<div id="colors">
+		
+	</div>
+	<div id="highs">highs</div>
+<div id="map">
+	
+</div>
+<div id="layerToggle">
+	<div id="labels" class="layerToggle">Hide Place Names</div>
+	<div id="roads" class="layerToggle">Hide Roads</div>
+</div>
+
+<div id="dotKey">1 dot = 1 person</div>
+	<!-- <div id="infoButton">About</div> -->
+
+<!-- <div id="popup">tract info</div> -->
+<script>
+
+console.log(top10Tracts)
+var colorDictionary={"Asian Indian":"#1CABFC",
+"Bangladeshi":"#00A5A0",
+"Bhutanese":"#004A82",
+"Burmese":"#0055FF",
+"Cambodian":"#330033",
+"Chinese, Except Taiwanese":"#FF010D",
+"Filipino":"#A502FF",
+"Hmong":"#660033",
+"Indonesian":"#660066",
+"Japanese":"#d87422",
+"Korean":"#deae2a",
+"Laotian":"#5555BF",
+"Malaysian":"#FF33D9",
+"Mongolian":"#99CC00",
+"Nepalese":"#006633",
+"Okinawan":"#CC3333",
+"Pakistani":"#79dc53",
+"Sri Lankan":"#009966",
+"Taiwanese":"#FF6666",
+"Thai":"#990099",
+"Vietnamese":"#990066",
+"Other Asian, Specified":"#999999",
+"Other Asian, Not Specified":"#999999"}
+	
+var nationLabels ={"B02018002":"Asian Indian",
+       "B02018003":"Bangladeshi",
+       "B02018004":"Bhutanese",
+       "B02018005":"Burmese",
+       "B02018006":"Cambodian",
+       "B02018007":"Chinese, Except Taiwanese",
+       "B02018008":"Filipino",
+       "B02018009":"Hmong",
+       "B02018010":"Indonesian",
+       "B02018011":"Japanese",
+       "B02018012":"Korean",
+       "B02018013":"Laotian",
+       "B02018014":"Malaysian",
+       "B02018015":"Mongolian",
+       "B02018016":"Nepalese",
+       "B02018017":"Okinawan",
+       "B02018018":"Pakistani",
+       "B02018019":"Sri Lankan",
+       "B02018020":"Taiwanese",
+       "B02018021":"Thai",
+       "B02018022":"Vietnamese",
+       "B02018023":"Other Asian, Specified",
+       "B02018024":"Other Asian, Not Specified"}
+	
+	
+var country = d3.csv("R12930229_SL010.csv")
+var tractAsians = d3.csv("R12929173_SL140_reduced_nations.csv")
+var tractTotals = d3.csv("R12931419_SL140.csv")
+var tractsGeo = d3.json("tracts_simplified_withId.geojson")
+//var centroids = d3.json("highestCentroids.geojson")
+
+var map
+	   
+Promise.all([country,tractAsians,tractTotals,tractsGeo])
+.then(function(data){
+    drawMap(data)
+})
+
+
+
+function makeTractDictionary(data){
+	var dict ={}
+	for(var i in data){
+		//console.log(data[i])
+		var key = String(data[i]["Geo_FIPS"])
+		if(key.length==10){
+			key = "0"+key
+		}
+		var values = data[i]
+		dict[key]=values
+	}
+	return dict
+}
+function sumOfTracts(tracts,tractsData){
+	//console.log(tracts)
+	var onScreen = {}
+	for(var b in nationLabels){
+		onScreen[b]=0
+	}
+	onScreen["all"]=0
+	for(var t in tracts){
+		print(tracts[t])
+		var gid = tracts[t].properties.FIPS
+		var tract = tractsData[gid]
+		onScreen["all"]+=parseInt(tract["ACS19_5yr_B02018001"])
+		for(var c in nationLabels){
+			onScreen[c]+=parseInt(tract["ACS19_5yr_"+c])
+		}
+	}
+	//console.log(onScreen)
+	return onScreen
+}
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function drawMap(data){
+	var tracts = data[1]
+	var tractDictionary = makeTractDictionary(tracts)
+	var tractTotalsDictionary = makeTractDictionary(data[2])
+	var tractShape = data[3]
+	//var highestCentroids = data[4]
+	//console.log(highestCentroids)
+		//console.log(tractDictionary)
+	
+	var initialZoom = 10.5
+	var initialCenter = [-73.96888937812909,40.75]
+	
+	var locationHash = window.location.hash
+	if(locationHash!=""&& locationHash.split("/").length==3){
+		var hashCenter = [locationHash.split("/")[2],locationHash.split("/")[1]]
+		var hashZoom = locationHash.split("/")[0].replace("#","")
+		initialZoom = hashZoom
+		initialCenter = hashCenter
+	}else{
+		//console.log("no preloaded location, go to default")
+	}
+	
+	
+	mapboxgl.accessToken = 'pk.eyJ1IjoiYzRzci1nc2FwcCIsImEiOiJja2J0ajRtNzMwOHBnMnNvNnM3Ymw5MnJzIn0.fsTNczOFZG8Ik3EtO9LdNQ';
+	map = new mapboxgl.Map({
+	container: 'map', // container ID
+	style: 'mapbox://styles/c4sr-gsapp/ckv2pcy3w2fiv15qtw0op20nd', // custom style url from https://studio.mapbox.com/
+	center: initialCenter, // starting position
+	zoom: initialZoom, // starting zoom
+	maxZoom:11,
+	minZoom:5//,
+	//icon-allow-overlap:true
+	});
+	
+	 map.addControl(
+		 new MapboxGeocoder({
+			 accessToken: mapboxgl.accessToken,
+			 mapboxgl: mapboxgl//,
+			 // zoom: 11.5//,
+			// countries: 'us'
+			 
+		 })
+	 );
+		d3.selectAll(".mapboxgl-ctrl-logo").remove()
+	
+ 	map.on("load",function(){
+		map.on('moveend',function(){
+			 updateUrlHash()
+		});
+		
+		var roadsShow = true
+		var labelsShow = true
+		console.log(map.getStyle().layers)
+		
+		d3.select("#labels").style("cursor","pointer").on("click",function(){
+			if(labelsShow==true){
+				d3.select(this).html("Show Place Names")
+				labelsShow=false
+				map.setLayoutProperty("place-label", 'visibility', 'none');
+				
+			}else{
+				d3.select(this).html("Hide Place Names")
+				labelsShow=true
+				map.setLayoutProperty("place-label", 'visibility', 'visible');
+			}
+		})
+		
+		d3.select("#roads").style("cursor","pointer").on("click",function(){
+			if(roadsShow==true){
+				d3.select(this).html("Show Roads")
+				roadsShow=false
+				map.setLayoutProperty("road", 'visibility', 'none');
+				
+			}else{
+				d3.select(this).html("Hide Roads")
+				roadsShow=true
+				map.setLayoutProperty("road", 'visibility', 'visible');
+			}
+		})
+		
+		map.addSource('tract_simple', {
+				'type': 'geojson',
+			'data':tractShape
+		});
+		
+		map.addLayer({
+		'id': 'tract_test',
+		'type': 'line',
+		'source': 'tract_simple',
+		'layout': {},
+		'paint': {
+		'line-width':1,
+		'line-color': '#000000',
+		'line-opacity': [
+		'case',
+		['boolean', ['feature-state', 'hover'], false],
+		1,
+		0
+		]
+		}
+		});
+		
+		var hoveredStateId = null
+			map.setPaintProperty("tracts", "line-opacity",0)
+			  map.setPaintProperty("tracts", "line-color","#000000")
+		
+    	drawKey(data[0][0],data[1])
+		d3.selectAll(".mapboxgl-ctrl-logo").remove()
+		
+			 //map.setPaintProperty("tracts_hover", "line-opacity",0)
+		map.on('mousemove', 'tract_test', (e) => {
+				if (e.features.length > 0) {
+					if (hoveredStateId !== null) {
+						map.setFeatureState(
+							{ source: 'tract_simple', id: hoveredStateId },
+							{ hover: false }
+						);
+					}
+					hoveredStateId = e.features[0].id;
+					//console.log(hoverStateId)
+					map.setFeatureState(
+						{ source: 'tract_simple', id: hoveredStateId },
+						{ hover: true }
+					);
+			
+				var features = e.features[0]
+				var geoId = String(features.properties.GEOID)
+				d3.select("#onScreen_header").html("Tract "+geoId)
+				//console.log(geoId)
+				//console.log(tractDictionary[geoId])
+				//console.log(tractDictionary[geoId])
+			//	map.setFilter('tracts', ['==', 'GEOID',geoId]);			 //
+			//  map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
+				var totalAsians =parseInt(tractDictionary[geoId]["ACS19_5yr_B02018001"])
+				var totalPop = parseInt(tractTotalsDictionary[geoId]["SE_A00001_001"])
+				d3.select("#totalInTract").html(numberWithCommas(totalAsians)).style("font-size","16px")
+			
+			
+				if(totalPop!=0 && totalAsians!=0){
+					//console.log("data not 0")
+					var percentAsians = Math.round(totalAsians/totalPop*10000)/100+"%"
+					var nations = ""
+					for(var n in nationLabels){
+						var label = nationLabels[n]
+						var value = tractDictionary[geoId]["ACS19_5yr_"+n]
+						var percent = Math.round(value/totalAsians*10000)/100+"%"
+						// d3.select("#onScreen_"+n).html(percent)
+						if(percent!="0%"){
+							d3.select("#onScreen_"+n).html(percent)
+							//nations+="<strong>"+label+"</strong>: "+value+"("+percent+")"+"<br>"
+						}else{
+							d3.select("#onScreen_"+n).html("--")
+						}
+					}	
+				}else{
+					for(var n in nationLabels){
+							d3.select("#onScreen_"+n).html("--")
+					
+					}
+				}
+			}
+		})
+		
+ 		 var layers =  map.getStyle().layers
+ 		  	 for(var l =0;l<6;l++){
+ 		   			var layerId = "group-"+l
+				 if(layerId!="mapbox-satellite"&& layerId!="background"&& layerId!="country-boundaries"){
+				 //	console.log(layerId)
+					
+					 map.setPaintProperty(layerId,'circle-radius',.7)
+					 map.setPaintProperty(layerId,'circle-opacity',{'base': 1,'stops': [[4, 1],[8, 1],[12, 1]]})
+					  map.setPaintProperty(layerId, "circle-color", ['match',
+							['get', 'nation'],
+							 "ACS19_5yr_B02018002",colorDictionary[nationLabels["B02018002"]],
+							"ACS19_5yr_B02018003",colorDictionary[nationLabels["B02018003"]],
+							"ACS19_5yr_B02018004",colorDictionary[nationLabels["B02018004"]],
+							"ACS19_5yr_B02018005",colorDictionary[nationLabels["B02018005"]],
+							"ACS19_5yr_B02018006",colorDictionary[nationLabels["B02018006"]],
+							"ACS19_5yr_B02018007",colorDictionary[nationLabels["B02018007"]],
+							"ACS19_5yr_B02018008",colorDictionary[nationLabels["B02018008"]],
+							"ACS19_5yr_B02018009",colorDictionary[nationLabels["B02018009"]],
+							"ACS19_5yr_B02018010",colorDictionary[nationLabels["B02018010"]],
+							"ACS19_5yr_B02018011",colorDictionary[nationLabels["B02018011"]],
+							"ACS19_5yr_B02018012",colorDictionary[nationLabels["B02018012"]],
+							"ACS19_5yr_B02018013",colorDictionary[nationLabels["B02018013"]],
+							"ACS19_5yr_B02018014",colorDictionary[nationLabels["B02018014"]],
+							"ACS19_5yr_B02018015",colorDictionary[nationLabels["B02018015"]],
+							"ACS19_5yr_B02018016",colorDictionary[nationLabels["B02018016"]],
+							"ACS19_5yr_B02018017",colorDictionary[nationLabels["B02018017"]],
+							"ACS19_5yr_B02018018",colorDictionary[nationLabels["B02018018"]],
+							"ACS19_5yr_B02018019",colorDictionary[nationLabels["B02018019"]],
+							"ACS19_5yr_B02018020",colorDictionary[nationLabels["B02018020"]],
+							"ACS19_5yr_B02018021",colorDictionary[nationLabels["B02018021"]],
+							"ACS19_5yr_B02018022",colorDictionary[nationLabels["B02018022"]],
+							"ACS19_5yr_B02018023",colorDictionary[nationLabels["B02018023"]],
+							"ACS19_5yr_B02018024",colorDictionary[nationLabels["B02018024"]],
+							/* other */ '#888888']
+ 
+  					 )
+				 }
+ 		   		}
+
+ 	})
+}
+
+function updateUrlHash() {
+	//https://gis.stackexchange.com/questions/99907/how-to-insert-coordinates-to-url
+    //this is bound to the map, so:
+    var zoom = map.getZoom();
+    var center = map.getCenter()
+    window.location.hash = zoom + '/' + center.lat + '/' + center.lng;
+}
+	   
+function drawKey(data,tracts){
+	var percentDictionary = []
+	
+	
+	for(var n in nationLabels){
+			var percent = data["PCT_ACS19_5yr_"+n]
+			var value = data["ACS19_5yr_"+n]
+			percentDictionary.push({nation:n,percent:percent,pop:value})
+	}
+
+		var sorted = percentDictionary//.sort(function(a,b){return b.percent-a.percent})
+		var table = d3.select("#colors").append("div").append("table")
+		var row = table.append("tr")
+		row.append("th").html("")
+		row.append("th").html("United<br>States<br>")
+		row.append("th").html("Tract<br><br>").attr("id","onScreen_header").style("font-weight","bold")
+
+				//.attr("class","onScreen").attr("id","onScreen_header")
+		var row = table.append("tr")//
+		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
+		row.append("th").html("Asian Pop.").style("font-size","11px")
+		row.append("th").html("Asian Pop.").style("font-weight","bold").style("font-size","11px")
+	
+		var row = table.append("tr")
+		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
+		row.append("th").html(numberWithCommas(data["ACS19_5yr_B02018001"])).style("font-size","16px")
+		row.append("th").html("").attr("id","totalInTract").style("font-weight","bold")
+	
+		
+		var row = table.append("tr")
+		row.append("td").html("<br>Click to filter").style("font-style","italic")
+		row.append("td").html("")//"% of Total<br> Asian <br>Population")
+			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
+		row.append("td").html("")//"% of Tract<br>Asian <br>Population")
+			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
+	
+		var highlighted = "a"
+		
+		for(var s in sorted){
+			var row = table.append("tr")
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			.style("cursor","pointer")
+			.attr("clicked",false)
+			.on("mouseover",function(){
+				var id = d3.select(this).attr("id")
+				d3.selectAll("#"+id).style("background-color","#ddd")
+				
+					//d3.select(this).style("background-color","#aaa")
+			})
+			.on("mouseout",function(){
+				var id = d3.select(this).attr("id")
+				d3.selectAll(".nationRow").style("background-color","#fff")
+				d3.selectAll("#"+highlighted).style("background-color","#ddd")
+				//console.log(highlighted)
+			})
+			.on("click",function(){
+				d3.selectAll(".nationRow").style("background-color","#fff")
+				//d3.select(this).style("background-color","#aaaaaa")
+				var id = d3.select(this).attr("id")
+				d3.selectAll("#"+id).style("background-color","#ddd")
+				var topTracts =top10Tracts["ACS19_5yr_"+id]
+					d3.selectAll(".highIds").remove()
+				
+				for(var h in topTracts){
+					d3.selectAll("#highs").append("div")
+					.attr("class","highIds")
+					.html(topTracts[h])
+					.attr("id","_"+topTracts[h])
+					.on("click",function(d){
+						var thisId = d3.select(this).attr("id")
+						var activeCentroid = centroids[thisId.replace("_","")]
+						map.flyTo({
+						center: activeCentroid
+							})
+					})
+				}
+				//console.log(top10Tracts["ACS19_5yr_"+id])
+				
+				if(id==highlighted){
+					d3.selectAll("#"+highlighted).style("background-color","#fff")
+					highlighted = "a"
+					
+					map.setFilter('group-0', ['!=', 'nation',"x"]);
+					map.setFilter('group-1', ['!=', 'nation',"x"]);
+					map.setFilter('group-2', ['!=', 'nation',"x"]);
+					map.setFilter('group-3', ['!=', 'nation',"x"]);
+					map.setFilter('group-4', ['!=', 'nation',"x"]);
+					map.setFilter('group-5', ['!=', 'nation',"x"]);
+				}else{
+					map.setFilter('group-0', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-1', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-2', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-3', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-4', ['==', 'nation',"ACS19_5yr_"+id]);
+					map.setFilter('group-5', ['==', 'nation',"ACS19_5yr_"+id]);
+					highlighted = id
+				}
+			})
+			row.append("td").html(nationLabels[sorted[s].nation].split(",").join("<br>"))
+			.style("color",colorDictionary[nationLabels[sorted[s].nation]])
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			
+			row.append("td").html(sorted[s].percent+"%")
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			
+			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation)
+			.style("font-weight",700).attr("class","onScreen")
+			//.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			
+			
+		}
+}
+		   
+</script>
+ 
+</body>
+</html>
