@@ -7,8 +7,9 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet">
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
 <script src="//d3js.org/d3.v5.min.js"></script>
-	<script src="top10Tracts.js"></script>
+	<script src="top100Tracts.js"></script>
 	<script src="highestCentroids.js"></script>
+	<script src="topCounties.js"></script>
 
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
 <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
@@ -114,13 +115,31 @@ th{
 	margin-top:3px;
 	background-color:white;
 }
-#highs{
-	width:100px;
-	height:100px;
+
+#places{
 	position:fixed;
-	top:100px;
+	top:10px;
 	right:10px;
 	z-index:999;
+	font-size:12px;
+}
+.mapboxgl-ctrl-geocoder--input {
+	border:1px solid black;
+    height: 24px;
+	width:250px;
+    padding: 8px 25px;
+	
+}
+.mapboxgl-ctrl-geocoder--icon {
+    top: 2px;
+    fill: #000000;
+}
+#counties{
+	background-color:#fff;
+}
+#nationsDropdown{
+	width:250px;
+	height:24px;
 	border:1px solid black;
 }
 </style>
@@ -138,10 +157,20 @@ th{
 	
 <!--	<div id="zoom">zoom</div>
 	<div id="center">center</div> -->
-	<div id="colors">
 		
+	<div id="places">
+	<div id="geocoder" class="geocoder">Search for a place<br></div>
+	<br>
+	or See counties with the highest concentration of
+	
+	<div id="concentrations"></div>
+	<div id="counties"></div>
 	</div>
-	<div id="highs">highs</div>
+	
+	
+	<div id="colors">		
+	</div>
+	
 <div id="map">
 	
 </div>
@@ -156,7 +185,7 @@ th{
 <!-- <div id="popup">tract info</div> -->
 <script>
 
-console.log(top10Tracts)
+//console.log(top10Tracts)
 var colorDictionary={"Asian Indian":"#1CABFC",
 "Bangladeshi":"#00A5A0",
 "Bhutanese":"#004A82",
@@ -180,7 +209,8 @@ var colorDictionary={"Asian Indian":"#1CABFC",
 "Vietnamese":"#990066",
 "Other Asian, Specified":"#999999",
 "Other Asian, Not Specified":"#999999"}
-	
+  var numberToState= {'01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY','60':'AS','66':'GU','69':'MP','72':'PR','78':'VI'}
+  
 var nationLabels ={"B02018002":"Asian Indian",
        "B02018003":"Bangladeshi",
        "B02018004":"Bhutanese",
@@ -211,16 +241,38 @@ var tractAsians = d3.csv("R12929173_SL140_reduced_nations.csv")
 var tractTotals = d3.csv("R12931419_SL140.csv")
 var tractsGeo = d3.json("tracts_simplified_withId.geojson")
 //var centroids = d3.json("highestCentroids.geojson")
+	   var countyCentroids = d3.csv("countyCentroids.csv")
 
 var map
-	   
-Promise.all([country,tractAsians,tractTotals,tractsGeo])
+var centroidsByCounty
+Promise.all([country,tractAsians,tractTotals,tractsGeo,countyCentroids])
 .then(function(data){
+	
+	centroidsByCounty = countyDictionary(data[4])
     drawMap(data)
 })
-
-
-
+function countyDictionary(data){
+	var formatted = {}
+	for(var i in data){
+		var gid = data[i].GEOID
+		formatted[gid]=data[i]
+	}
+	return formatted
+}
+// function getTopCounties(){
+// 	for(var l in top100Tracts){
+// 		var layer = l
+// 		console.log(layer)
+// 		var tracts = top100Tracts[l]
+// 		for(var c in tracts){
+// 			var county = tracts[c].slice(0,5)
+// 			console.log(county)
+// 			break
+// 		}
+// 		break
+// 	}
+//
+// }
 function makeTractDictionary(data){
 	var dict ={}
 	for(var i in data){
@@ -256,7 +308,45 @@ function sumOfTracts(tracts,tractsData){
 function numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+function makeDropdown(){
+	var dropdown = d3.select("#concentrations").append("select").attr("name","nations").attr("id","nationsDropdown")
+	dropdown.append("option").html("choose one")
+	
+	for(var i in nationLabels){
+		//console.log(i)
+		dropdown.append("option").attr("value",i).html(nationLabels[i])
+	}
+	
+	dropdown.on("change",function(){
+		var e = document.getElementById("nationsDropdown");
+		var nation = nationLabels[e.value];
+		var counties = topCounties["ACS19_5yr_"+e.value]
+		d3.select("#counties").html("click to move map to county")
+		
+		for(var c in counties){
+			d3.select("#counties").append("div")
+			.attr("class","countiesList")
+			.attr("id",centroidsByCounty[counties[c]].GEOID)
+			.html(centroidsByCounty[counties[c]].NAME+" County, "+numberToState[centroidsByCounty[counties[c]].STATEFP])
+			.on("click",function(){
+				var thisId = d3.select(this).attr("id")
+				var coords = [centroidsByCounty[thisId].X,centroidsByCounty[thisId].Y]
+				d3.selectAll(".countiesList").style("font-weight",300)
+				d3.select(this).style("font-weight",700)
+				//console.log(coords)
+				map.flyTo({
+					center: coords
+				})
+			})
+		}
+		
+		
+	})
+}
+
 function drawMap(data){
+	 makeDropdown()
+	//getTopCounties()
 	var tracts = data[1]
 	var tractDictionary = makeTractDictionary(tracts)
 	var tractTotalsDictionary = makeTractDictionary(data[2])
@@ -266,7 +356,7 @@ function drawMap(data){
 		//console.log(tractDictionary)
 	
 	var initialZoom = 10.5
-	var initialCenter = [-73.96888937812909,40.75]
+	var initialCenter = [-73.91847457056099,40.75738494065385]
 	
 	var locationHash = window.location.hash
 	if(locationHash!=""&& locationHash.split("/").length==3){
@@ -290,15 +380,19 @@ function drawMap(data){
 	//icon-allow-overlap:true
 	});
 	
-	 map.addControl(
-		 new MapboxGeocoder({
+	// map.addControl(
+		var geocoder = new MapboxGeocoder({
 			 accessToken: mapboxgl.accessToken,
 			 mapboxgl: mapboxgl//,
 			 // zoom: 11.5//,
 			// countries: 'us'
 			 
-		 })
-	 );
+		 })	 
+	// );
+	 
+	 document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+	d3.select(".mapboxgl-ctrl-geocoder--input").html("").attr("placeholder","")
+	 
 		d3.selectAll(".mapboxgl-ctrl-logo").remove()
 	
  	map.on("load",function(){
@@ -308,7 +402,7 @@ function drawMap(data){
 		
 		var roadsShow = true
 		var labelsShow = true
-		console.log(map.getStyle().layers)
+		//console.log(map.getStyle().layers)
 		
 		d3.select("#labels").style("cursor","pointer").on("click",function(){
 			if(labelsShow==true){
@@ -425,8 +519,8 @@ function drawMap(data){
 				 if(layerId!="mapbox-satellite"&& layerId!="background"&& layerId!="country-boundaries"){
 				 //	console.log(layerId)
 					
-					 map.setPaintProperty(layerId,'circle-radius',.7)
-					 map.setPaintProperty(layerId,'circle-opacity',{'base': 1,'stops': [[4, 1],[8, 1],[12, 1]]})
+					 map.setPaintProperty(layerId,'circle-radius',1)
+					 map.setPaintProperty(layerId,'circle-opacity',{'base': .6,'stops': [[4, 1],[9, 1],[11, .8]]})
 					  map.setPaintProperty(layerId, "circle-color", ['match',
 							['get', 'nation'],
 							 "ACS19_5yr_B02018002",colorDictionary[nationLabels["B02018002"]],
@@ -484,7 +578,7 @@ function drawKey(data,tracts){
 		var row = table.append("tr")
 		row.append("th").html("")
 		row.append("th").html("United<br>States<br>")
-		row.append("th").html("Tract<br><br>").attr("id","onScreen_header").style("font-weight","bold")
+		row.append("th").html("rollover map <br>to see Tract<br>").attr("id","onScreen_header").style("font-weight","bold")
 
 				//.attr("class","onScreen").attr("id","onScreen_header")
 		var row = table.append("tr")//
@@ -530,22 +624,22 @@ function drawKey(data,tracts){
 				//d3.select(this).style("background-color","#aaaaaa")
 				var id = d3.select(this).attr("id")
 				d3.selectAll("#"+id).style("background-color","#ddd")
-				var topTracts =top10Tracts["ACS19_5yr_"+id]
-					d3.selectAll(".highIds").remove()
-				
-				for(var h in topTracts){
-					d3.selectAll("#highs").append("div")
-					.attr("class","highIds")
-					.html(topTracts[h])
-					.attr("id","_"+topTracts[h])
-					.on("click",function(d){
-						var thisId = d3.select(this).attr("id")
-						var activeCentroid = centroids[thisId.replace("_","")]
-						map.flyTo({
-						center: activeCentroid
-							})
-					})
-				}
+				// var topTracts =top100Tracts["ACS19_5yr_"+id]
+	// 				d3.selectAll(".highIds").remove()
+	//
+	// 			for(var h in topTracts){
+	// 				d3.selectAll("#concentrations").append("div")
+	// 				.attr("class","highIds")
+	// 				.html(topTracts[h])
+	// 				.attr("id","_"+topTracts[h])
+	// 				.on("click",function(d){
+	// 					var thisId = d3.select(this).attr("id")
+	// 					var activeCentroid = centroids[thisId.replace("_","")]
+	// 					map.flyTo({
+	// 					center: activeCentroid
+	// 						})
+	// 				})
+	// 			}
 				//console.log(top10Tracts["ACS19_5yr_"+id])
 				
 				if(id==highlighted){
