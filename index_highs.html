@@ -40,7 +40,7 @@ body { margin: 0; padding: 0;
     box-shadow:5px 5px 10px rgba(0,0,0,.3);  
 }
 #mapPopup{
-	position:fixed;bottom:5px;left:5px;
+	position:fixed;bottom:-100px;left:-100px;
 	z-index:999;
 	padding:10px;
 	background-color:rgba(255,255,255,1);
@@ -217,6 +217,12 @@ var colorDictionary={"Asian Indian":"#1CABFC",
 "Vietnamese":"#990066",
 "Other Asian, Specified":"#999999",
 "Other Asian, Not Specified":"#999999"}
+
+
+for(var c in colorDictionary){
+	//colorDictionary[c]="#0055FF"
+}
+
   var numberToState= {'01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY','60':'AS','66':'GU','69':'MP','72':'PR','78':'VI'}
   
 var nationLabels ={"B02018002":"Asian Indian",
@@ -257,6 +263,7 @@ Promise.all([country,tractAsians,tractTotals,tractsGeo,countyCentroids])
 .then(function(data){
 	
 	centroidsByCounty = countyDictionary(data[4])
+	//console.log(centroidsByCounty)
     drawMap(data)
 })
 function countyDictionary(data){
@@ -338,7 +345,7 @@ function makeDropdown(){
 			.html(centroidsByCounty[counties[c]].NAME+" County, "+numberToState[centroidsByCounty[counties[c]].STATEFP])
 			.on("click",function(){
 				var thisId = d3.select(this).attr("id")
-				var coords = [centroidsByCounty[thisId].X,centroidsByCounty[thisId].Y]
+				var coords = [centroidsByCounty[thisId].longitude,centroidsByCounty[thisId].latitude]
 				d3.selectAll(".countiesList").style("font-weight",300)
 				d3.select(this).style("font-weight",700)
 				//console.log(coords)
@@ -408,7 +415,8 @@ function drawMap(data){
 					 map.setPaintProperty("road",'line-opacity',.5)
 		
 		map.on("move",function(){
-			d3.select("#onScreen").html("")
+			d3.select("#onScreen").html("")//.style("visibility","hidden")
+			d3.select("#mapPopup").style("visibility","hidden")
 		})
 		map.on('moveend',function(){
 			 updateUrlHash()
@@ -423,11 +431,13 @@ function drawMap(data){
 				d3.select(this).html("Show Place Names")
 				labelsShow=false
 				map.setLayoutProperty("place-label", 'visibility', 'none');
+				map.setLayoutProperty("county-centroids-1ey4jb", 'visibility', 'none');
 				
 			}else{
 				d3.select(this).html("Hide Place Names")
 				labelsShow=true
 				map.setLayoutProperty("place-label", 'visibility', 'visible');
+				map.setLayoutProperty("county-centroids-1ey4jb", 'visibility', 'visible');
 			}
 		})
 		
@@ -475,6 +485,7 @@ function drawMap(data){
 		
 			 //map.setPaintProperty("tracts_hover", "line-opacity",0)
 		map.on('mousemove', 'tract_test', (e) => {
+			
 				if (e.features.length > 0) {
 					if (hoveredStateId !== null) {
 						map.setFeatureState(
@@ -521,6 +532,8 @@ function drawMap(data){
 			
 			d3.select("#mapPopup").style("left",window.event.clientX+20+"px")
 			d3.select("#mapPopup").style("top",window.event.clientY+"px")
+			d3.select("#mapPopup").style("visibility","visible")
+			
 		})
 		
  		 var layers =  map.getStyle().layers
@@ -529,7 +542,7 @@ function drawMap(data){
 				 if(layerId!="mapbox-satellite"&& layerId!="background"&& layerId!="country-boundaries"){
 				 //	console.log(layerId)
 					
-					 map.setPaintProperty(layerId,'circle-radius',1)
+					 map.setPaintProperty(layerId,'circle-radius',.8)
 					 map.setPaintProperty(layerId,'circle-opacity',{'base': 1,'stops': [[4, 1],[9, 1],[11, 1]]})
 					  map.setPaintProperty(layerId, "circle-color", ['match',
 							['get', 'nation'],
