@@ -32,13 +32,14 @@ body { margin: 0; padding: 0;
 	position:fixed;top:65px;left:5px;
 	z-index:999;
 	padding:10px;
+	padding-top:0px;
 	background-color:rgba(255,255,255,.9);
 	font-size:11px;
 /*	border:1px solid black;
-*/	width:265px;
+*/	width:200px;
     box-shadow:5px 5px 10px rgba(0,0,0,.3);  
 }
-#popup{
+#mapPopup{
 	position:fixed;bottom:5px;left:5px;
 	z-index:999;
 	padding:10px;
@@ -46,20 +47,21 @@ body { margin: 0; padding: 0;
 	/*border:1px solid black;
 */font-size:11px;
     box-shadow:5px 5px 10px rgba(0,0,0,.3);  
-	
+	/*width:100px;*/
 }
 #title{
-	font-size:16px;
-	letter-spacing:1px;
+	font-size:18px;
+	letter-spacing:2px;
 	z-index:999;
 	width:100%;
+	text-align:center;
 }
 #subtitle{
-	font-size:11px;
+	font-size:10px;
 	letter-spacing:1px;
 	z-index:999;
 	width:100%;	
-	padding-top:10px;
+	padding-top:2px;
 }
 #header{
 	position:fixed;top:0px;left:0px;
@@ -67,17 +69,17 @@ body { margin: 0; padding: 0;
 	margin:5px;
 	padding:10px;
 	background-color:rgba(255,255,255,1);
-	width:265px;
+	width:200px;
 	background-color:black;
 	color:white;
     box-shadow:5px 5px 10px rgba(0,0,0,.3);  
 }
 td{
 	line-height:100%;
-	width:100px;
+	width:70px;
 }
 th{
-	width:100px;
+	width:70px;
 	text-align:left;
 	font-weight:300;
 	font-size:13px;
@@ -105,7 +107,7 @@ th{
 #layerToggle{
 	font-size:12px;
 	position:fixed;
-	bottom:45px;
+	bottom:60px;
 	left:5px;
 	padding:0px;
 }
@@ -146,8 +148,7 @@ th{
 </head>
 <body>
 	<div id="header">
-		<div id="title">Asian American Dot Density Map</div>
-		<div id="subtitle">Based on 2015 - 2019 5 year ACS estimates</div>
+		<div id="title"><strong>Asian American</strong><br>Dot Density Map</div>
 	</div>
 	<!-- <div id="menu">
 		Diversity
@@ -174,12 +175,19 @@ th{
 <div id="map">
 	
 </div>
+<div id="mapPopup">
+	<div id="onScreen"></div>
+</div>
+
 <div id="layerToggle">
 	<div id="labels" class="layerToggle">Hide Place Names</div>
 	<div id="roads" class="layerToggle">Hide Roads</div>
 </div>
 
-<div id="dotKey">1 dot = 1 person</div>
+<div id="dotKey">1 dot = 1 person
+		<div id="subtitle">Based on 2015 - 2019 5 year ACS</div>
+</div>
+
 	<!-- <div id="infoButton">About</div> -->
 
 <!-- <div id="popup">tract info</div> -->
@@ -375,7 +383,7 @@ function drawMap(data){
 	style: 'mapbox://styles/c4sr-gsapp/ckv2pcy3w2fiv15qtw0op20nd', // custom style url from https://studio.mapbox.com/
 	center: initialCenter, // starting position
 	zoom: initialZoom, // starting zoom
-	maxZoom:11,
+	maxZoom:12,
 	minZoom:5//,
 	//icon-allow-overlap:true
 	});
@@ -396,6 +404,12 @@ function drawMap(data){
 		d3.selectAll(".mapboxgl-ctrl-logo").remove()
 	
  	map.on("load",function(){
+					 map.setPaintProperty("road",'line-width',.2)
+					 map.setPaintProperty("road",'line-opacity',.5)
+		
+		map.on("move",function(){
+			d3.select("#onScreen").html("")
+		})
 		map.on('moveend',function(){
 			 updateUrlHash()
 		});
@@ -477,40 +491,36 @@ function drawMap(data){
 			
 				var features = e.features[0]
 				var geoId = String(features.properties.GEOID)
-				d3.select("#onScreen_header").html("Tract "+geoId)
-				//console.log(geoId)
-				//console.log(tractDictionary[geoId])
-				//console.log(tractDictionary[geoId])
-			//	map.setFilter('tracts', ['==', 'GEOID',geoId]);			 //
-			//  map.setPaintProperty("tracts", "line-opacity",['match',['get', 'GEOID'],geoId,1,0])
 				var totalAsians =parseInt(tractDictionary[geoId]["ACS19_5yr_B02018001"])
 				var totalPop = parseInt(tractTotalsDictionary[geoId]["SE_A00001_001"])
-				d3.select("#totalInTract").html(numberWithCommas(totalAsians)).style("font-size","16px")
+				d3.select("#onScreen").html("Tract "+geoId+"<br>Total Asian Population: "+numberWithCommas(totalAsians))
 			
-			
-				if(totalPop!=0 && totalAsians!=0){
+				if(totalPop!=0 && totalAsians!=0){					
 					//console.log("data not 0")
 					var percentAsians = Math.round(totalAsians/totalPop*10000)/100+"%"
 					var nations = ""
+					var numberOfNations = 0
 					for(var n in nationLabels){
 						var label = nationLabels[n]
 						var value = tractDictionary[geoId]["ACS19_5yr_"+n]
 						var percent = Math.round(value/totalAsians*10000)/100+"%"
 						// d3.select("#onScreen_"+n).html(percent)
 						if(percent!="0%"){
-							d3.select("#onScreen_"+n).html(percent)
-							//nations+="<strong>"+label+"</strong>: "+value+"("+percent+")"+"<br>"
-						}else{
-							d3.select("#onScreen_"+n).html("--")
+							numberOfNations+=1
+							d3.select("#onScreen").append("div").attr("id","onScreen_"+n)
+							d3.select("#onScreen_"+n).html(label+": "+percent).style("color",colorDictionary[label])
 						}
 					}	
-				}else{
-					for(var n in nationLabels){
-							d3.select("#onScreen_"+n).html("--")
-					
-					}
-				}
+				}// else{
+// 					for(var n in nationLabels){
+// 							d3.select("#onScreen_"+n).html("--")
+// 					}
+// 				}
 			}
+			d3.select("#mapPopup").style("height",numberOfNations*12+30+"px")
+			
+			d3.select("#mapPopup").style("left",window.event.clientX+20+"px")
+			d3.select("#mapPopup").style("top",window.event.clientY+"px")
 		})
 		
  		 var layers =  map.getStyle().layers
@@ -520,7 +530,7 @@ function drawMap(data){
 				 //	console.log(layerId)
 					
 					 map.setPaintProperty(layerId,'circle-radius',1)
-					 map.setPaintProperty(layerId,'circle-opacity',{'base': .6,'stops': [[4, 1],[9, 1],[11, .8]]})
+					 map.setPaintProperty(layerId,'circle-opacity',{'base': 1,'stops': [[4, 1],[9, 1],[11, 1]]})
 					  map.setPaintProperty(layerId, "circle-color", ['match',
 							['get', 'nation'],
 							 "ACS19_5yr_B02018002",colorDictionary[nationLabels["B02018002"]],
@@ -576,28 +586,32 @@ function drawKey(data,tracts){
 		var sorted = percentDictionary//.sort(function(a,b){return b.percent-a.percent})
 		var table = d3.select("#colors").append("div").append("table")
 		var row = table.append("tr")
-		row.append("th").html("")
-		row.append("th").html("United<br>States<br>")
-		row.append("th").html("rollover map <br>to see Tract<br>").attr("id","onScreen_header").style("font-weight","bold")
+		row.append("th").html("Total Asian <br>Population"+"<br>").style("font-size","12px")//.style("font-weight",700)
+		row.append("th").html("<br>"+numberWithCommas(data["ACS19_5yr_B02018001"])+"<br><br>").style("font-size","16px").style("font-weight",700)
+	//	row.append("th").html("rollover map <br>to see Tract<br>").attr("id","onScreen_header").style("font-weight","bold")
 
-				//.attr("class","onScreen").attr("id","onScreen_header")
-		var row = table.append("tr")//
-		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
-		row.append("th").html("Asian Pop.").style("font-size","11px")
-		row.append("th").html("Asian Pop.").style("font-weight","bold").style("font-size","11px")
-	
-		var row = table.append("tr")
-		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
-		row.append("th").html(numberWithCommas(data["ACS19_5yr_B02018001"])).style("font-size","16px")
-		row.append("th").html("").attr("id","totalInTract").style("font-weight","bold")
-	
+	// 			//.attr("class","onScreen").attr("id","onScreen_header")
+// 		var row = table.append("tr")//
+// 		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
+// 		row.append("th").html("Asian Pop.").style("font-size","11px")
+// //		row.append("th").html("Asian Pop.").style("font-weight","bold").style("font-size","11px")
+//
+// 		var row = table.append("tr")
+// 		row.append("th").html("")//click below <br>to filter").style("font-style","italic")
+// 		row.append("th").html(numberWithCommas(data["ACS19_5yr_B02018001"])).style("font-size","14px")
+// 		//row.append("th").html("").attr("id","totalInTract").style("font-weight","bold")
+//
 		
+		var row = table.append("tr").html("Click to filter").style("font-style","italic")
+	
 		var row = table.append("tr")
-		row.append("td").html("<br>Click to filter").style("font-style","italic")
-		row.append("td").html("")//"% of Total<br> Asian <br>Population")
-			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
-		row.append("td").html("")//"% of Tract<br>Asian <br>Population")
-			.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
+		row.append("td").html("")
+	row.append("td").html("Persons").style("font-weight",700)//"% of Total<br> Asian <br>Population")
+			//.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
+	row.append("td").html("% of total").style("font-weight",700)
+	
+	//	row.append("td").html("")//"% of Tract<br>Asian <br>Population")
+	//		.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
 	
 		var highlighted = "a"
 		
@@ -662,8 +676,15 @@ function drawKey(data,tracts){
 					highlighted = id
 				}
 			})
+			
 			row.append("td").html(nationLabels[sorted[s].nation].split(",").join("<br>"))
 			.style("color",colorDictionary[nationLabels[sorted[s].nation]])
+			.attr("id",sorted[s].nation)
+			.attr("class","nationRow")
+			
+			
+			
+			row.append("td").html(numberWithCommas(sorted[s].pop))
 			.attr("id",sorted[s].nation)
 			.attr("class","nationRow")
 			
@@ -671,10 +692,11 @@ function drawKey(data,tracts){
 			.attr("id",sorted[s].nation)
 			.attr("class","nationRow")
 			
-			row.append("td").html("").attr("id","onScreen_"+sorted[s].nation)
-			.style("font-weight",700).attr("class","onScreen")
+			
+		//	row.append("td").html("").attr("id","onScreen_"+sorted[s].nation)
+		//	.style("font-weight",700).attr("class","onScreen")
 			//.attr("id",sorted[s].nation)
-			.attr("class","nationRow")
+		//	.attr("class","nationRow")
 			
 			
 		}
