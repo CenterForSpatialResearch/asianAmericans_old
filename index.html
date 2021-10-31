@@ -398,9 +398,9 @@ function drawMap(data){
 	// map.addControl(
 		var geocoder = new MapboxGeocoder({
 			 accessToken: mapboxgl.accessToken,
-			 mapboxgl: mapboxgl//,
+			 mapboxgl: mapboxgl,
 			 // zoom: 11.5//,
-			// countries: 'us'
+			 countries: 'us'
 			 
 		 })	 
 	// );
@@ -621,7 +621,7 @@ function drawKey(data,tracts){
 		row.append("td").html("")
 	row.append("td").html("Persons").style("font-weight",700)//"% of Total<br> Asian <br>Population")
 			//.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
-	row.append("td").html("% of total").style("font-weight",700)
+	row.append("td").html("%").style("font-weight",700)
 	
 	//	row.append("td").html("")//"% of Tract<br>Asian <br>Population")
 	//		.style("font-style","italic").style("font-weight",700)//.style("border-bottom","1px solid black")
