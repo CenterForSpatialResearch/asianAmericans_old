@@ -157,8 +157,8 @@ function formatMsas(data){
 function drawTree(data,scale){
 	var width = scale(data.totalPop)
 	     var margin = {top: 35, right: 10, bottom: 10, left: 10},
-	       width =  300+ margin.left + margin.right,
-	       height =  300 + margin.top + margin.bottom;
+	       width =  scale(data.totalAsian)+ margin.left + margin.right,
+	       height =  scale(data.totalAsian) + margin.top + margin.bottom;
 	   	//var data = data[1]
 	   var svg = d3.select("#charts")
 	   .append("svg")
@@ -295,7 +295,7 @@ Promise.all([msa])
 	//console.log(maxPop)
 	var minPop = d3.min(formatted,function(d){return d.totalAsian})
 //	console.log(minPop)
-	var popScale = d3.scaleLinear().domain([minPop,maxPop]).range([100,800])
+	var popScale = d3.scaleLinear().domain([minPop,maxPop]).range([60,1000])
 	
 	for(var i in sorted){
 		drawTree(sorted[i],popScale)
