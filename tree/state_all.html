@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Asian American Dot Density</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+<style>
+body { margin: 0; padding: 0; 
+	font-family:helvetica;
+}
+#header{position:fixed;top:0px;left:0px;padding:20px;z-index:999;background-color:#fff;border-bottom:1px dotted black;}
+#charts{position:absolute;top:170px;left:0px;width:100%;}
+.key_label{
+	padding-left:5px;
+	font-size:12px;
+}
+#popup{z-index:999;
+	background-color:#fff;
+	position:fixed;
+	font-size:12px;
+	padding:5px;
+	border:1px solid black;
+}
+.button{
+	border:1px dotted black;
+	padding:5px;
+	margin:2px;
+}
+#title{font-size:24px;}
+#subtitle{font-size:12px;font-weight:100;font-style:italic;}
+</style>
+</head>
+<body>
+	<div id="header">
+		<div id="title">
+			Composition of <strong>Asian Americans</strong> by State<br>
+			<!-- <span id="subtitle">Click on a group to sort MSA charts by that group's population from most to least</span> -->
+		</div>
+		
+		<div id="key"></div>
+	</div>
+<div id="charts"></div>	
+<div id="popup"></div>	
+
+	<!-- <div id="infoButton">About</div> -->
+
+<!-- <div id="popup">tract info</div> -->
+<script>
+
+
+//console.log(top10Tracts)
+var colorDictionary={
+
+"Asian Indian":"#1CABFC",
+"Bangladeshi":"#00A5A0",
+"Bhutanese":"#004A82",
+"Burmese":"#0055FF",
+"Cambodian":"#330033",
+"Chinese, Except Taiwanese":"#FF010D",
+"Filipino":"#A502FF",
+"Hmong":"#660033",
+"Indonesian":"#660066",
+"Japanese":"#d87422",
+"Korean":"#deae2a",
+"Laotian":"#5555BF",
+"Malaysian":"#FF33D9",
+"Mongolian":"#99CC00",
+"Nepalese":"#006633",
+"Okinawan":"#CC3333",
+"Pakistani":"#79dc53",
+"Sri Lankan":"#009966",
+"Taiwanese":"#FF6666",
+"Thai":"#990099",
+"Vietnamese":"#990066",
+"Other Asian, Specified":"#999999",
+"Other Asian, Not Specified":"#999999"}
+
+
+
+
+  var numberToState= {'01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY','60':'AS','66':'GU','69':'MP','72':'PR','78':'VI'}
+  
+var nationLabels ={
+		"B02018002":"Asian Indian",
+       "B02018003":"Bangladeshi",
+       "B02018004":"Bhutanese",
+       "B02018005":"Burmese",
+       "B02018006":"Cambodian",
+       "B02018007":"Chinese, Except Taiwanese",
+       "B02018008":"Filipino",
+       "B02018009":"Hmong",
+       "B02018010":"Indonesian",
+       "B02018011":"Japanese",
+       "B02018012":"Korean",
+       "B02018013":"Laotian",
+       "B02018014":"Malaysian",
+       "B02018015":"Mongolian",
+       "B02018016":"Nepalese",
+       "B02018017":"Okinawan",
+       "B02018018":"Pakistani",
+       "B02018019":"Sri Lankan",
+       "B02018020":"Taiwanese",
+       "B02018021":"Thai",
+       "B02018022":"Vietnamese",
+       "B02018023":"Other Asian, Specified",
+       "B02018024":"Other Asian, Not Specified"}
+
+	   function numberWithCommas(x) {
+	       return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	   }
+function formatMsas(data){
+//	console.log(data)
+	   	//console.log(data)
+	   var formattedMsas = []
+	   for(var i in data){
+		   var formattedMsa = {}
+		   formattedMsa["children"]=[]
+		   
+		   var msa = data[i]
+		   var totalPopulation = parseInt(msa["SE_A00001_001"])
+		   var totalAsian = parseInt(msa["ACS19_5yr_B02018001"])
+		   var totalNonAsian = totalPopulation-totalAsian
+		   var msaName =msa["Geo_QName"]
+		   if(totalAsian/totalPopulation>0){
+			  // console.log(totalAsian/totalPopulation)
+			//   console.log(msaName)
+			  // formattedMsa["children"].push({name:"none-Asian", value:totalNonAsian})
+			  // formattedMsa["children"].push({name:"Asian", value:totalAsian})
+		   	   formattedMsa["name"]=msaName
+		   	   formattedMsa["totalPop"]=totalPopulation
+		   	   formattedMsa["totalAsian"]=totalAsian
+			   formattedMsa["share"] = Math.round(totalAsian/totalPopulation*10000)/100
+			   for(var n in nationLabels){
+    	 				//console.log(nationLabels[n])
+			   		var label = nationLabels[n]
+					var key = n
+					var value = parseInt(msa["ACS19_5yr_"+n])
+				   var percent = value/totalAsian
+				   formattedMsa[key]=value
+					formattedMsa["children"].push({name:label, 					value:value,percent:Math.round((value/totalAsian)*10000)/100+"%"})
+			  }
+			  formattedMsas.push(formattedMsa)
+			  //break
+		   }
+		   
+		  
+	   //break
+	   }
+	   return formattedMsas
+}
+function drawTree(data,scale){
+	var width = scale(data.totalPop)
+	     var margin = {top: 10, right: 10, bottom: 10, left: 0},
+	       width =  scale(data.totalAsian)+ margin.left + margin.right,
+	       height =  scale(data.totalAsian) + margin.top + margin.bottom;
+	   	//var data = data[1]
+		 var div = d3.select("#charts").append("div").style("display","inline-block").style("padding","10px")
+		   .style("width",width+"px")
+		  var state = div.append("div")
+		  var stats = div.append("div")
+		  var missing = div.append("div")
+		  var chart = div.append("div")
+		   
+	  // var svg = d3.select("#charts")
+	   var svg = chart.append("svg")
+	     .attr("width", width + margin.left + margin.right)
+	     .attr("height", height + margin.top + margin.bottom)
+	   .append("g")
+	     .attr("transform",
+	           "translate(" + margin.left + "," + margin.top + ")");
+	
+	   	  // Give the data to this cluster layout:
+	   	  var root = d3.hierarchy(data).sum(function(d){ return d.value}) // Here the size of each leave is given in the 'value' field in input data
+		 root.children.sort(function(a,b){return b.value-a.value})
+//var sorted = root.leaves().sort(function(a,b){return b.value-a.value})
+
+	   	  // Then d3.treemap computes the position of each element of the hierarchy
+	   	  d3.treemap()
+	   	    .size([width, height])
+	   	    .paddingTop(0)
+	   	    .paddingRight(0)
+	   	    .paddingInner(1)      // Padding between each rectangle
+	   	    //.paddingOuter(6)
+	   	    //.padding(20)
+	   	    (root)
+
+	   	  // prepare a color scale
+	   	  var color = d3.scaleOrdinal()
+	   	    .domain(Object.keys(colorDictionary))
+	   	    .range(Object.values(colorDictionary))
+// console.log(Object.keys(colorDictionary))
+// console.log(Object.values(colorDictionary))
+	   	  // And a opacity scale
+	   	  var opacity = d3.scaleLinear()
+	   	    .domain([10, 30])
+	   	    .range([.5,1])
+
+	   	  // use this information to add rectangles:
+	   	  svg .selectAll("rect")
+	   	    .data(root.leaves())
+	   	    .enter()
+	   	    .append("rect")
+	   	      .attr('x', function (d) { return d.x0; })
+	   	      .attr('y', function (d) { return d.y0; })
+	   	      .attr('width', function (d) { return d.x1 - d.x0; })
+	   	      .attr('height', function (d) { return d.y1 - d.y0; })
+		  .attr("value",function(d){return numberWithCommas(d.data.value)})
+		  .attr("key",function(d){return d.data.name})
+		  .attr("percent",function(d){return d.data.percent})
+		  .style("cursor","pointer")
+	   	      .style("stroke", "white")
+	   	      .style("fill", function(d){return colorDictionary[d.data.name]} )
+	   	   //   .style("opacity", function(d){ return opacity(d.data.value)})
+		  .on("mouseover",function(){
+			  d3.select(this).style("stroke","black")
+			  d3.select("#popup").html("<strong>"+d3.select(this).attr("key")+"<strong><br> " 					+d3.select(this).attr("value")+"("+d3.select(this).attr("percent")+")")
+			  .style("left",window.event.clientX+20+"px")
+			  .style("top",window.event.clientY+"px")
+		  	//console.log(d3.select(this).attr("key"))
+		  })
+		  .on("mouseout",function(){
+			  d3.select(this).style("stroke","white")})
+
+	   	  // // and to add the text labels
+ // 	   	  svg
+ // 	   	    .selectAll("text")
+ // 	   	    .data(root.leaves())
+ // 	   	    .enter()
+ // 	   	    .append("text")
+ // 	   	      .attr("x", function(d){ return d.x0+5})    // +10 to adjust position (more right)
+ // 	   	      .attr("y", function(d){ return d.y0+10})    // +20 to adjust position (lower)
+ // 	   	      .text(function(d){ return d.data.name})
+ // 	   	      .attr("font-size", "10px")
+ // 	   	      .attr("fill", "black")
+ //
+ // 	   	  // and to add the text labels
+ // 	   	  svg
+ // 	   	    .selectAll("vals")
+ // 	   	    .data(root.leaves())
+ // 	   	    .enter()
+ // 	   	    .append("text")
+ // 	   	      .attr("x", function(d){ return d.x0+5})    // +10 to adjust position (more right)
+ // 	   	      .attr("y", function(d){ return d.y0+18})    // +20 to adjust position (lower)
+ // 	   	      .text(function(d){ return d.data.percent})
+ // 	   	      .attr("font-size", "10px")
+ // 	   	      .attr("fill", "black")
+
+	   	  // // Add title for the 3 groups
+  // 	   	  svg
+  // 	   	    .selectAll("titles")
+  // 	   	    .data(root.descendants().filter(function(d){return d.depth==1}))
+  // 	   	    .enter()
+  // 	   	    .append("text")
+  // 	   	      .attr("x", function(d){ return d.x0})
+  // 	   	      .attr("y", function(d){ return d.y0+21})
+  // 	   	      .text(function(d){ return d.data.name })
+  // 	   	      .attr("font-size", "10px")
+  // 	   	      .attr("fill",  function(d){ return color(d.data.name)} )
+
+	   	  // Add title for the 3 groups
+			  //console.log(data)
+	   	  state
+	   	   // .append("text")
+	   	   //   .attr("x", 0)
+	   	   //   .attr("y", 5)    // +20 to adjust position (lower)
+	   	      .html(data["name"])
+	   	      .style("font-size", "24px")
+	     stats
+	    	    //.append("text")
+	    	      //.attr("x", 0)
+	    	      //.attr("y", 20)    // +20 to adjust position (lower)
+	    	      .html("Total Asian Population:"+numberWithCommas(data["totalAsian"]))
+	       	.style("font-size", "10px")
+			  
+			  
+			  var none = []
+			  for(var i in nationLabels){
+				  if(data[i]==0 && i!="B02018024"&& i!="B02018023"){
+					  none.push(nationLabels[i])
+				  }
+			  }
+			  var noneText = none.join(", ")
+			  console.log(data["name"],none)
+			  
+			  if(none.length>0){
+		   	  missing//.append("text")
+			   	      //.attr("x", 0)
+			   	     // .attr("y", 30)    // +20 to adjust position (lower)
+			   	      .html("No "+noneText+" populations")
+				  .style("font-style","italic")
+				  .style("font-weight","bold")
+			   	      .style("font-size", "10px")
+			  }
+	   	  
+}
+	
+var msa = d3.csv("R12955848_SL040.csv")
+Promise.all([msa])
+.then(function(data){
+	//console.log(data)
+	var formatted = formatMsas(data[0])
+	//console.log(formatted)
+//	drawTree(data[1])
+	var sorted = formatted.sort(function(a,b){return b.totalAsian-a.totalAsian})
+	
+	var maxPop = d3.max(formatted,function(d){return d.totalAsian})
+	//console.log(maxPop)
+	var minPop = d3.min(formatted,function(d){return d.totalAsian})
+//	console.log(minPop)
+	var popScale = d3.scaleLinear().domain([minPop,maxPop]).range([100,600])
+	
+	for(var i in sorted){
+		drawTree(sorted[i],popScale)
+	}
+	
+	
+	
+	
+	for(var c in nationLabels){
+		var label = nationLabels[c]
+		
+		var country = d3.select("#key").append("div").style("display","inline-block").attr("class","button")
+		.attr("id",c)
+		.style("cursor","pointer")
+		// .on("click",function(){
+// 			d3.selectAll("svg").remove()
+// 			var group = d3.select(this).attr("id")
+// 			var sorted = formatted.sort(function(a,b){ return b[group]-a[group]})
+// 			d3.selectAll(".button").style("border","1px dotted black")
+// 			d3.select(this).style("border","2px solid black")
+// 			for(var i in sorted){
+// 				drawTree(sorted[i])
+// 			}
+// 		})
+		
+		country.append("div").style("width","10px").style("height","10px").style("background-color",colorDictionary[label])
+		.style("display","inline-block")
+		country.append("div").style("height","10px").style("color",colorDictionary[label]).html(label)
+		.style("display","inline-block").attr("class","key_label")
+	}
+	
+	
+	
+	
+})
+
+</script>
+ 
+</body>
+</html>
