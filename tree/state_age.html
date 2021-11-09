@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Asian American Dot Density</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.5.1/mapbox-gl.js"></script>
+<script src="//d3js.org/d3.v5.min.js"></script>
+<script src="ageKeys.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css" type="text/css">
+<style>
+body { margin: 0; padding: 0; 
+	font-family:helvetica;
+}
+#header{position:fixed;top:0px;left:0px;padding:20px;z-index:999;background-color:#fff;border-bottom:1px dotted black;}
+#charts{position:absolute;top:170px;left:0px;width:100%;}
+.key_label{
+	padding-left:5px;
+	font-size:12px;
+}
+#popup{z-index:999;
+	background-color:#fff;
+	position:fixed;
+	font-size:12px;
+	padding:5px;
+	border:1px solid black;
+}
+.button{
+	border:1px dotted black;
+	padding:5px;
+	margin:2px;
+}
+#title{font-size:24px;}
+#subtitle{font-size:12px;font-weight:100;font-style:italic;}
+</style>
+</head>
+<body>
+	<div id="header">
+		<div id="title">
+			Composition of <strong>Asian Americans</strong> by State<br>
+			<!-- <span id="subtitle">Click on a group to sort MSA charts by that group's population from most to least</span> -->
+		</div>
+		
+		<div id="key"></div>
+	</div>
+<div id="charts"></div>	
+<div id="popup"></div>	
+
+	<!-- <div id="infoButton">About</div> -->
+
+<!-- <div id="popup">tract info</div> -->
+<script>
+
+var numberToState= {'01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY','60':'AS','66':'GU','69':'MP','72':'PR','78':'VI'}
+
+function numberWithCommas(x) {
+   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function drawBars(groupLabel,data,left,right,color){
+	//console.log(data)
+	var bar = 12
+	var w = 400
+	var h = 180
+	var group = d3.select("#_"+data["Geo_FIPS"]).append("div").style("display","inline-block")
+	var title = group.append("div").html(groupLabel).style("width",w+"px")
+	var chart = group.append("div").append("svg").attr("width",w).attr("height",h)
+	
+	var xScale = d3.scaleLinear().domain([0,.6]).range([0,w/2])
+	
+	chart.append("text").text("Male").attr("y",20).attr("x",w/2-5).attr('text-anchor',"end")
+	.style("font-size","12px")
+	chart.append("text").text("Female").attr("y",20).attr("x",w/2+5).style("font-size","12px")
+	
+	chart.selectAll("._"+data["Geo_FIPS"])
+	.data(left.slice(1,left.length))
+	.enter()
+	.append("rect")
+	.attr("y",function(d,i){return h-i*bar})
+	.attr("x",function(d){
+		var total = data["ACS19_5yr_"+left[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return w/2-xScale(percent)-1
+	})
+	.attr("height",bar-2)
+	.attr("width",function(d){
+		var total = data["ACS19_5yr_"+left[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return xScale(percent)
+	})
+	.style("fill",color)
+	
+	chart.selectAll(".label_"+data["Geo_FIPS"])
+	.data(left.slice(1,left.length))
+	.enter()
+	.append("text")
+	.attr("y",function(d,i){return h-i*bar+bar-2})
+	.attr("x",function(d){
+		var total = data["ACS19_5yr_"+left[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return w/2-xScale(percent)-2
+	})
+	.text(function(d){
+		var total = data["ACS19_5yr_"+left[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return Math.round(percent*10000)/100+"%"
+	})
+	.attr("text-anchor","end")
+	.style("font-size",(bar-2)+"px")
+	.attr("fill","#999")
+	
+	chart.selectAll("._"+data["Geo_FIPS"])
+	.data(left.slice(1,right.length))
+	.enter()
+	.append("rect")
+	.attr("y",function(d,i){return h-i*bar})
+	.attr("x",w/2+1)
+	.attr("height",bar-1)
+	.attr("width",function(d){
+		console.log()
+		var total = data["ACS19_5yr_"+right[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return xScale(percent)
+	})
+	.style("fill",color)
+	  
+	chart.selectAll(".label_"+data["Geo_FIPS"])
+	.data(left.slice(1,left.length))
+	.enter()
+	.append("text")
+	.attr("y",function(d,i){return h-i*bar+bar-2})
+	.attr("x",function(d){
+		var total = data["ACS19_5yr_"+right[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return w/2+xScale(percent)+2
+	})
+	.text(function(d){
+		var total = data["ACS19_5yr_"+right[0]]
+		var value = data["ACS19_5yr_"+d]
+		var percent = value/total
+		return Math.round(percent*10000)/100+"%"
+	})
+	.attr("text-anchor","start")
+	.style("font-size",(bar-2)+"px")
+	.attr("fill","#999")
+	
+	chart.selectAll(".ageLabel_"+data["Geo_FIPS"])
+	.data(left.slice(1,left.length))
+	.enter()
+	.append("text")
+	.attr("y",function(d,i){return h-i*bar+bar-2})
+	.attr("x",function(d){
+	return 10
+	})
+	.text(function(d,i){
+		return ageLabels[i]
+	})
+	.attr("text-anchor","start")
+	.style("font-size","12px")
+	.attr("fill","#999")
+}
+var ageLabels = ["Under 5 Years","5 To 9 Years","10 To 14 Years","15 To 17 Years","18 And 19 Years","20 To 24 Years","25 To 29 Years","30 To 34 Years","35 To 44 Years","45 To 54 Years","55 To 64 Years","65 To 74 Years","75 To 84 Years","85 Years And Over"]
+
+var state = d3.csv("age_by_sex.csv")
+Promise.all([state])
+
+.then(function(data){
+	console.log(data)
+	var states = data[0]
+	var colors = ["#be698c",
+			"#79b643",
+			"#a95fc9",
+			"#52ad7b",
+			"#d04799",
+			"#6f7d35",
+			"#7178ca",
+			"#cda244",
+			"#4bafd0",
+			"#d14647",
+			"#bf7043"]
+	
+	var roots = {
+		"B01001A":"White Alone",
+		"B01001B":"Black Or African American Alone",
+		"B01001C":"American Indian And Alaska Native Alone",
+		"B01001D":"Asian Alone",
+		"B01001E":"Native Hawaiian And Other Pacific Islander Alone",
+		"B01001F":"Some Other Race Alone",
+		"B01001G":"Two Or More Races",
+		"B01001H":"White Alone, Not Hispanic Or Latino",
+		"B01001I":"Hispanic Or Latino"
+	}
+	//var roots = {"B01001D":"Asian Alone"}
+	var extensions = 31
+	for(var s in states){
+		console.log(states[s])
+		var stateDiv = d3.select("#charts").append("div").attr("id","_"+states[s]["Geo_FIPS"]).style("padding","20px")
+		stateDiv.append("div").html(states[s]["Geo_NAME"]).style("font-size","36px")
+		var cIndex = 0
+		for(var r in roots){
+			var color = colors[cIndex]
+			cIndex+=1
+			var male = []
+			var female = []
+		
+			for(var i=2;i<=31;i++){
+				var key = r+"0"+i
+				if(i<10){
+					var key = r+"00"+i
+				}
+				if(i<17){male.push(key)}
+				else{female.push(key)}
+			}
+				//console.log(roots[r])
+				drawBars(roots[r],states[s],male,female,color)
+				//break
+		}
+		//break
+		
+	}
+	
+	
+})
+
+</script>
+ 
+</body>
+</html>
