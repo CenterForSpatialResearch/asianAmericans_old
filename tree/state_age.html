@@ -14,7 +14,7 @@
 body { margin: 0; padding: 0; 
 	font-family:helvetica;
 }
-#header{position:fixed;top:0px;left:0px;padding:20px;z-index:999;background-color:#fff;border-bottom:1px dotted black;}
+#header{position:fixed;top:0px;left:0px;padding:20px;z-index:999;background-color:#fff;border-bottom:1px dotted black;width:100%;}
 #charts{position:absolute;top:170px;left:0px;width:100%;}
 .key_label{
 	padding-left:5px;
@@ -32,21 +32,21 @@ body { margin: 0; padding: 0;
 	padding:5px;
 	margin:2px;
 }
-#title{font-size:24px;}
+#title{font-size:36px;}
 #subtitle{font-size:12px;font-weight:100;font-style:italic;}
 </style>
 </head>
 <body>
 	<div id="header">
 		<div id="title">
-			Composition of <strong>Ages</strong> by State<br>
+			Composition of <strong>Asian American AgeGroups</strong> by State<br>
 			<!-- <span id="subtitle">Click on a group to sort MSA charts by that group's population from most to least</span> -->
 		</div>
 		
 		<div id="key"></div>
 	</div>
 <div id="charts"></div>	
-<div id="popup"></div>	
+<!-- <div id="popup"></div>	 -->
 
 	<!-- <div id="infoButton">About</div> -->
 
@@ -198,11 +198,12 @@ Promise.all([state])
 		"B01001H":"White Alone, Not Hispanic Or Latino",
 		"B01001I":"Hispanic Or Latino"
 	}
-	//var roots = {"B01001D":"Asian Alone"}
+	var roots = {"B01001D":"Asian Alone"}
 	var extensions = 31
 	for(var s in states){
 		console.log(states[s])
-		var stateDiv = d3.select("#charts").append("div").attr("id","_"+states[s]["Geo_FIPS"]).style("padding","20px")
+		var stateDiv = d3.select("#charts").append("div").attr("id","_"+states[s]["Geo_FIPS"])
+		.style("padding","20px").style("display","inline-block")
 		stateDiv.append("div").html(states[s]["Geo_NAME"]).style("font-size","36px")
 		var cIndex = 0
 		for(var r in roots){
